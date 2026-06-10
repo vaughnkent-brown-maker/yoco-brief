@@ -2,6 +2,12 @@
   "functions": {
     "api/gemini.js": {
       "maxDuration": 30
+    },
+    "api/slack-search.js": {
+      "maxDuration": 30
+    },
+    "api/slack-notify.js": {
+      "maxDuration": 30
     }
   }
 }
