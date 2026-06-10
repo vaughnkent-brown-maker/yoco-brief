@@ -16,13 +16,30 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Merchant name required' });
   }
 
-  const EXCLUDED_EXACT = ['transactions', 'transaction-feed', 'payment-feed', 'payments'];
+  // Automated/noise channels to exclude
+  const EXCLUDED_PATTERNS = [
+    'transactions', 'transaction',
+    'payments', 'payment',
+    'whatsapp', 'mywhatsapp',
+    'data-feed', 'data_feed',
+    'automated', 'automation',
+    'alerts', 'monitoring',
+    'logs', 'system',
+    'pagerduty', 'datadog',
+    'notifications', 'notify',
+    'intercom', 'zendesk',
+    'bot', 'webhook'
+  ];
+
+  const isExcluded = (channelName) => {
+    const name = (channelName || '').toLowerCase();
+    return EXCLUDED_PATTERNS.some(p => name.includes(p));
+  };
 
   try {
-    // Fetch page 1 and page 2 to get beyond the transactions noise
     const results = [];
 
-    for (let page = 1; page <= 3; page++) {
+    for (let page = 1; page <= 5; page++) {
       const url = `https://slack.com/api/search.messages?query=${encodeURIComponent(merchant)}&count=20&sort=timestamp&sort_dir=desc&page=${page}`;
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -31,10 +48,7 @@ export default async function handler(req, res) {
 
       if (!data.ok) {
         if (page === 1) {
-          return res.status(400).json({
-            error: data.error || 'Slack search failed',
-            needed: data.needed
-          });
+          return res.status(400).json({ error: data.error || 'Slack search failed', needed: data.needed });
         }
         break;
       }
@@ -42,22 +56,15 @@ export default async function handler(req, res) {
       const messages = data.messages?.matches || [];
       if (messages.length === 0) break;
 
-      // Filter excluded channels
-      const filtered = messages.filter(m => {
-        const channelName = (m.channel?.name || '').toLowerCase();
-        return !EXCLUDED_EXACT.includes(channelName);
-      });
-
+      const filtered = messages.filter(m => !isExcluded(m.channel?.name));
       results.push(...filtered);
-      if (results.length >= 8) break;
 
-      // If this page had results beyond transactions, we have enough
-      if (filtered.length > 0) break;
+      if (results.length >= 8) break;
     }
 
     if (results.length === 0) {
       return res.status(200).json({
-        summary: `No relevant Slack mentions found for "${merchant}" outside of automated channels.`
+        summary: `No relevant Slack conversations found for "${merchant}" — mentions exist but are in automated/system channels only.`
       });
     }
 
