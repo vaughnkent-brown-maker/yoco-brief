@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yoco AM Brief Generator — Gemini</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F7F6F3; color: #1a1a1a; min-height: 100vh; }
+  .header { background: #1a1a1a; border-bottom: 1px solid #333; padding: 0 2rem; display: flex; align-items: center; gap: 1rem; height: 60px; }
+  .logo { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 900; color: #fff; letter-spacing: 3px; }
+  .badge { font-size: 11px; background: rgba(255,255,255,0.15); color: #fff; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .main { max-width: 920px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .search-card { background: #fff; border: 1px solid #E5E4E0; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .search-card h1 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .search-card p { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+  .form-group label { display: block; font-size: 11px; font-weight: 600; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input { width: 100%; height: 40px; border: 1px solid #E5E4E0; border-radius: 8px; padding: 0 12px; font-size: 14px; color: #1a1a1a; background: #fff; outline: none; transition: border-color 0.15s; }
+  .form-group input:focus { border-color: #0066FF; box-shadow: 0 0 0 3px rgba(0,102,255,0.08); }
+  .btn-primary { height: 40px; padding: 0 22px; background: #0066FF; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+  .btn-primary:hover { background: #0055DD; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { height: 34px; padding: 0 14px; background: #fff; color: #444; border: 1px solid #E5E4E0; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+  .btn-secondary:hover { background: #F7F6F3; }
+  .btn-success { height: 40px; padding: 0 20px; background: #16A34A; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-success:hover { background: #15803D; }
+  .btn-success:disabled { opacity: 0.5; cursor: not-allowed; }
+  .data-sources { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .source-pill { background: #fff; border: 1px solid #E5E4E0; border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
+  .source-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: #D0CCC8; }
+  .source-dot.mock { background: #F59E0B; }
+  .source-dot.active { background: #22C55E; }
+  .source-pill strong { font-weight: 600; color: #1a1a1a; font-size: 12px; display: block; }
+  .loading { text-align: center; padding: 3rem; display: none; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #E5E4E0; border-top-color: #0066FF; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .loading p { font-size: 14px; color: #888; }
+  .brief-output { display: none; }
+  .brief-header { background: #fff; border: 1px solid #E5E4E0; border-radius: 14px 14px 0 0; border-bottom: none; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+  .brief-title { font-size: 18px; font-weight: 700; }
+  .brief-meta { font-size: 12px; color: #888; margin-top: 3px; }
+  .brief-actions { display: flex; gap: 8px; }
+  .brief-body { background: #fff; border: 1px solid #E5E4E0; border-radius: 0 0 14px 14px; overflow: hidden; }
+  .brief-section { padding: 1.4rem 1.5rem; border-bottom: 1px solid #F0EFE9; }
+  .brief-section:last-child { border-bottom: none; }
+  .section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; color: #aaa; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .sdot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .d-sf { background: #00A1E0; } .d-ic { background: #6B3FA0; } .d-lk { background: #FF6B35; }
+  .d-ai { background: #0066FF; } .d-slack { background: #4A154B; } .d-notion { background: #1a1a1a; }
+  .d-post { background: #16A34A; }
+  .mock-badge { font-size: 10px; background: #FEF3C7; color: #B45309; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px; }
+  .sc { font-size: 14px; line-height: 1.65; color: #1a1a1a; }
+  .sc ul { padding-left: 1.2rem; }
+  .sc li { margin-bottom: 6px; }
+  .sc p { margin-bottom: 8px; }
+  .sc strong { font-weight: 600; }
+  .sc .muted { font-size: 13px; color: #666; line-height: 1.6; }
+  .metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .metric { background: #F7F6F3; border-radius: 9px; padding: 12px 14px; }
+  .metric-label { font-size: 11px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .metric-value { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+  .metric-delta { font-size: 11px; font-weight: 600; margin-top: 2px; }
+  .up { color: #16A34A; } .down { color: #DC2626; }
+  .tag { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 4px; font-weight: 500; margin-right: 4px; margin-bottom: 5px; }
+  .tag-blue { background: #EEF3FF; color: #1D4ED8; }
+  .tag-amber { background: #FEF3C7; color: #B45309; }
+  .tag-green { background: #DCFCE7; color: #166534; }
+  .tag-red { background: #FEF2F2; color: #B91C1C; }
+  .tag-gray { background: #F3F4F6; color: #374151; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .chart-box { background: #F9F9F7; border: 1px solid #EEECEA; border-radius: 10px; padding: 14px; }
+  .chart-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .chart-container { position: relative; height: 140px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .col-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; font-weight: 600; }
+  .info-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid #F5F4F0; font-size: 13px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #666; }
+  .info-value { font-weight: 600; color: #1a1a1a; text-align: right; }
+  .health-bar { height: 6px; border-radius: 3px; background: #E5E4E0; margin: 10px 0; overflow: hidden; }
+  .health-fill { height: 100%; border-radius: 3px; background: #22C55E; transition: width 0.8s ease; }
+  .ai-section { background: #F5F8FF; }
+  .ai-content { font-size: 14px; line-height: 1.8; color: #1a1a1a; white-space: pre-wrap; }
+  .post-section { background: #F9FFF9; }
+  .post-textarea { width: 100%; min-height: 120px; border: 1px solid #D1FAE5; border-radius: 8px; padding: 12px; font-size: 14px; font-family: inherit; color: #1a1a1a; background: #fff; outline: none; resize: vertical; line-height: 1.6; transition: border-color 0.15s; }
+  .post-textarea:focus { border-color: #16A34A; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); }
+  .post-textarea::placeholder { color: #aaa; }
+  .post-actions { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+  .post-summary-out { margin-top: 14px; display: none; }
+  .post-summary-box { background: #fff; border: 1px solid #D1FAE5; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.7; color: #1a1a1a; white-space: pre-wrap; }
+  .sf-task-box { margin-top: 12px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px; display: none; }
+  .sf-task-box .task-header { font-size: 12px; font-weight: 700; color: #1D4ED8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .sf-task-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid #DBEAFE; }
+  .sf-task-row:last-child { border-bottom: none; }
+  .sf-task-row span:first-child { color: #3B82F6; }
+  .sf-task-row span:last-child { font-weight: 600; color: #1a1a1a; }
+  .success-pill { display: inline-flex; align-items: center; gap: 5px; background: #DCFCE7; color: #166534; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .error-box { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 1rem; font-size: 13px; color: #B91C1C; display: none; margin-bottom: 1rem; }
+  .divider { height: 1px; background: #F0EFE9; margin: 12px 0; }
+  .timeline-dot { width: 8px; height: 8px; border-radius: 50%; background: #0066FF; display: inline-block; margin-right: 6px; flex-shrink: 0; margin-top: 5px; }
+  .timeline-item { display: flex; align-items: flex-start; gap: 0; margin-bottom: 10px; font-size: 13px; }
+  .timeline-line { display: flex; flex-direction: column; align-items: center; margin-right: 10px; }
+  .tl-dot { width: 8px; height: 8px; border-radius: 50%; background: #0066FF; flex-shrink: 0; }
+  .tl-line { width: 1px; background: #E5E4E0; flex: 1; min-height: 16px; margin-top: 2px; }
+  @media (max-width: 640px) {
+    .form-row { grid-template-columns: 1fr; }
+    .data-sources { grid-template-columns: 1fr 1fr; }
+    .metric-row { grid-template-columns: 1fr 1fr; }
+    .chart-row { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">YOCO</div>
+  <div class="badge">AM Brief Generator</div><div style="font-size:11px;background:rgba(66,133,244,0.2);color:#8AB4F8;padding:3px 10px;border-radius:20px;font-weight:500">Gemini 2.0 Flash</div>
+</div>
+
+<div class="main">
+  <div class="search-card">
+    <h1>Generate Merchant Brief</h1>
+    <p>Full account intelligence before any merchant touchpoint — transactions, support, history, and AI-recommended approach.</p>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Merchant Name</label>
+        <input type="text" id="merchantName" placeholder="e.g. The Strangers Club" onkeydown="if(event.key==='Enter')generateBrief()" />
+      </div>
+      <div class="form-group">
+        <label>Account Manager</label>
+        <select id="amName" style="width:100%;height:40px;border:1px solid #E5E4E0;border-radius:8px;padding:0 12px;font-size:14px;color:#1a1a1a;background:#fff;outline:none;transition:border-color 0.15s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2212%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%23999%27 d=%27M6 8L1 3h10z%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer">
+        <option value="Vaughn Kent-Brown">Vaughn Kent-Brown</option>
+        <option value="Bianca Muratu">Bianca Muratu</option>
+        <option value="Diaan Wiese">Diaan Wiese</option>
+        <option value="Melissa Barnes">Melissa Barnes</option>
+        <option value="Lebohang Mdakane">Lebohang Mdakane</option>
+        <option value="Nomahlubi Madikgetla">Nomahlubi Madikgetla</option>
+        <option value="Katlego Ramasodi">Katlego Ramasodi</option>
+      </select>
+      </div>
+      <button class="btn-primary" id="generateBtn" onclick="generateBrief()">Generate Brief</button>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #F0EFE9;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;flex-shrink:0">
+        <input type="checkbox" id="isGroupAccount" onchange="toggleGroupOptions()" style="width:16px;height:16px;accent-color:#0066FF;cursor:pointer">
+        <span style="font-size:13px;font-weight:600;color:#1a1a1a">Group Account</span>
+      </label>
+      <span style="font-size:12px;color:#888;padding-top:2px">Tick if this merchant has multiple locations or sub-accounts linked in Salesforce</span>
+    </div>
+    <div id="groupOptions" style="display:none;margin-top:12px;background:#F0F7FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 14px">
+      <p style="font-size:11px;font-weight:700;color:#1D4ED8;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Group account — data to pull</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#1a1a1a">
+          <input type="checkbox" id="includeHeadOffice" checked style="accent-color:#0066FF;width:14px;height:14px">
+          Head office account data
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#1a1a1a">
+          <input type="checkbox" id="includeSubAccounts" checked style="accent-color:#0066FF;width:14px;height:14px">
+          All linked sub-accounts &amp; locations
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#1a1a1a">
+          <input type="checkbox" id="consolidateGMV" checked style="accent-color:#0066FF;width:14px;height:14px">
+          Consolidated GMV across all locations
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#1a1a1a">
+          <input type="checkbox" id="groupAIContext" checked style="accent-color:#0066FF;width:14px;height:14px">
+          Group-level context in AI synthesis
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-sources">
+    <div class="source-pill"><div class="source-dot mock"></div><div><strong>Salesforce</strong>Mock data</div></div>
+    <div class="source-pill"><div class="source-dot mock"></div><div><strong>Intercom</strong>Mock data</div></div>
+    <div class="source-pill"><div class="source-dot mock"></div><div><strong>Looker</strong>Mock data</div></div>
+    <div class="source-pill"><div class="source-dot" id="dot-slack"></div><div><strong>Slack</strong><span id="slack-status">Ready</span></div></div>
+    <div class="source-pill"><div class="source-dot" id="dot-notion"></div><div><strong>Notion</strong><span id="notion-status">Ready</span></div></div>
+  </div>
+
+  <div id="errorBox" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1rem">
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <div style="font-size:20px;flex-shrink:0">⚠️</div>
+      <div style="flex:1">
+        <p style="font-size:14px;font-weight:700;color:#B91C1C;margin-bottom:4px">Brief generation failed</p>
+        <p id="errorMsg" style="font-size:13px;color:#B91C1C;margin-bottom:12px"></p>
+        <div id="errorReasons" style="background:#fff;border:1px solid #FECACA;border-radius:8px;padding:12px;margin-bottom:12px;display:none">
+          <p style="font-size:11px;font-weight:700;color:#B91C1C;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Possible reasons</p>
+          <ul id="errorReasonList" style="padding-left:1.1rem;font-size:13px;color:#7F1D1D;line-height:1.8"></ul>
+        </div>
+        <div id="errorSteps" style="background:#fff;border:1px solid #FECACA;border-radius:8px;padding:12px;display:none">
+          <p style="font-size:11px;font-weight:700;color:#B91C1C;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">What to try</p>
+          <ol id="errorStepList" style="padding-left:1.1rem;font-size:13px;color:#7F1D1D;line-height:1.8"></ol>
+        </div>
+        <button onclick="retryBrief()" style="margin-top:12px;height:32px;padding:0 14px;background:#B91C1C;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">Retry</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Pulling merchant data...</p>
+  </div>
+
+  <div class="brief-output" id="briefOutput">
+    <div class="brief-header">
+      <div>
+        <div class="brief-title" id="briefTitle"></div>
+        <div class="brief-meta" id="briefMeta"></div>
+      </div>
+      <div class="brief-actions">
+        <button class="btn-secondary" onclick="copyBrief()">Copy brief</button>
+        <button class="btn-secondary" id="saveNotionBtn" onclick="saveToNotion()" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">Save to Notion</button>
+        <button class="btn-secondary" onclick="resetForm()">New brief</button>
+      </div>
+    </div>
+
+    <div id="notionSaveStatus" style="display:none;padding:10px 1.5rem;font-size:13px;border-bottom:1px solid #F0EFE9;display:none;align-items:center;gap:8px"></div>
+    <div class="brief-body">
+
+      <!-- TRANSACTION TRENDS -->
+      <div class="brief-section">
+        <div class="section-label"><span class="sdot d-lk"></span>Transaction trends <span class="mock-badge">Mock</span></div>
+        <div class="metric-row">
+          <div class="metric"><div class="metric-label">GMV this month</div><div class="metric-value" id="gmv">—</div><div class="metric-delta" id="gmvDelta"></div></div>
+          <div class="metric"><div class="metric-label">Transactions</div><div class="metric-value" id="txCount">—</div><div class="metric-delta" id="txDelta"></div></div>
+          <div class="metric"><div class="metric-label">Avg ticket</div><div class="metric-value" id="avgTicket">—</div><div class="metric-delta" id="ticketDelta"></div></div>
+          <div class="metric"><div class="metric-label">Lifetime GMV</div><div class="metric-value" id="lifetimeGmv">—</div><div class="metric-delta up" id="lifetimeSince"></div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-box"><div class="chart-title">GMV — last 6 months (R)</div><div class="chart-container"><canvas id="gmvChart"></canvas></div></div>
+          <div class="chart-box"><div class="chart-title">Transaction volume — last 6 months</div><div class="chart-container"><canvas id="txChart"></canvas></div></div>
+        </div>
+        <div class="sc muted" id="lookerNotes" style="margin-top:12px"></div>
+      </div>
+
+      <!-- SALESFORCE SNAPSHOT -->
+      <div class="brief-section">
+        <div class="section-label"><span class="sdot d-sf"></span>Salesforce — account snapshot <span class="mock-badge">Mock</span></div>
+        <div class="sc" id="salesforceContent"></div>
+      </div>
+
+      <!-- GROUP ACCOUNT -->
+      <div class="brief-section" id="groupSection" style="display:none;background:#F0F7FF">
+        <div class="section-label"><span class="sdot" style="background:#1D4ED8"></span>Group account structure <span style="font-size:10px;background:#BFDBFE;color:#1D4ED8;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px">Live from Salesforce</span></div>
+        <div class="sc" id="groupContent"></div>
+      </div>
+
+      <!-- COMMERCIAL & PRODUCTS -->
+      <div class="brief-section">
+        <div class="section-label"><span class="sdot d-sf"></span>Commercial & products <span class="mock-badge">Mock</span></div>
+        <div class="sc" id="commercialContent"></div>
+      </div>
+
+      <!-- INTERCOM -->
+      <div class="brief-section">
+        <div class="section-label"><span class="sdot d-ic"></span>Intercom — support & sentiment <span class="mock-badge">Mock</span></div>
+        <div class="sc" id="intercomContent"></div>
+      </div>
+
+      <!-- SLACK -->
+      <div class="brief-section">
+        <div class="section-label"><span class="sdot d-slack"></span>Slack — internal mentions <span id="slackBadge" style="font-size:10px;background:#EEF3FF;color:#1D4ED8;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px">Live</span></div>
+        <div class="sc" id="slackContent"></div>
+      </div>
+
+      <!-- NOTION -->
+      <div class="brief-section">
+        <div class="section-label"><span class="sdot d-notion"></span>Notion — briefing history <span id="notionBadge" style="font-size:10px;background:#EEF3FF;color:#1D4ED8;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px">Live</span></div>
+        <div class="sc" id="notionContent"></div>
+      </div>
+
+      <!-- AI SYNTHESIS -->
+      <div class="brief-section ai-section">
+        <div class="section-label"><span class="sdot d-ai"></span>AI synthesis — recommended approach</div>
+        <div class="ai-content" id="aiContent"></div>
+      </div>
+
+      <!-- POST MEETING -->
+      <div class="brief-section post-section">
+        <div class="section-label"><span class="sdot d-post"></span>Post-meeting notes</div>
+        <div class="sc" style="margin-bottom:10px;font-size:13px;color:#666">Add your meeting notes below. AI will summarise them and create a Salesforce follow-up task.</div>
+        <textarea class="post-textarea" id="postNotes" placeholder="e.g. Discussed terminal expansion — merchant confirmed 2 new branches opening in August. Wants Pro Plan. App reporting bug still an issue, they are frustrated. Agreed to follow up within 48hrs on bug status. Opportunity to upsell Yoco Capital for fit-out costs..."></textarea>
+        <div class="post-actions">
+          <button class="btn-success" id="summariseBtn" onclick="summariseMeeting()">Summarise & create task</button>
+          <span id="postStatus" style="font-size:12px;color:#888"></span>
+        </div>
+        <div class="post-summary-out" id="postSummaryOut">
+          <div class="col-label" style="margin-top:14px;margin-bottom:8px">Meeting summary</div>
+          <div class="post-summary-box" id="postSummaryBox"></div>
+          <div class="sf-task-box" id="sfTaskBox">
+            <div class="task-header">&#9632; Salesforce task created</div>
+            <div id="sfTaskRows"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleGroupOptions() {
+  const checked = document.getElementById('isGroupAccount').checked;
+  document.getElementById('groupOptions').style.display = checked ? 'block' : 'none';
+}
+
+function getGroupMockData(merchant) {
+  return {
+    headOffice: {
+      name: merchant + ' — Head Office',
+      accountId: 'SF-HO-00192',
+      owner: 'Emma Joubert',
+      ownerRole: 'Group Owner / Decision Maker',
+      email: 'emma@strangers.co.za',
+      phone: '+27 82 441 7823',
+      location: 'Kramerville, Johannesburg',
+      onboarded: '2022-03-01',
+      lifetimeGMV: 'R2.4M',
+      tier: 'Key Account',
+      health: 85,
+      nps: 7,
+      contractRenewal: '2027-01-15',
+      billingContact: 'Liam Abrahams — liam@strangers.co.za',
+      paymentMethod: 'Debit order — 1st of month'
+    },
+    subAccounts: [
+      {
+        name: merchant + ' — Kramerville',
+        accountId: 'SF-001-0441', status: 'Active', gmv: 'R38,200', gmvDelta: '+9.2%',
+        tx: '694', txDelta: '+7.1%', avgTicket: 'R55.04',
+        location: 'Kramerville, JHB', terminals: 2, plan: 'Pro Plan',
+        onboarded: '2022-03-01', manager: 'Sipho Ndlovu',
+        openTickets: 1, csat: 4.3,
+        notes: 'Primary flagship location. Highest foot traffic. Gen2 terminal due for replacement.',
+        opportunities: ['Terminal replacement (Gen2 → Neo)', 'Yoco Capital — R30k pre-approved']
+      },
+      {
+        name: merchant + ' — Rosebank',
+        accountId: 'SF-001-0442', status: 'Active', gmv: 'R30,200', gmvDelta: '+15.4%',
+        tx: '546', txDelta: '+10.8%', avgTicket: 'R55.30',
+        location: 'Rosebank, JHB', terminals: 1, plan: 'Starter Plan',
+        onboarded: '2023-11-15', manager: 'Anika Botha',
+        openTickets: 1, csat: 4.1,
+        notes: 'Faster growth rate than Kramerville. Under-terminalled — 1 machine for volume. Strong upsell case for Pro Plan + extra terminal.',
+        opportunities: ['Pro Plan upgrade', 'Additional terminal x1', 'Xero sync review']
+      },
+      {
+        name: merchant + ' — Sandton',
+        accountId: 'SF-001-0443', status: 'Pending', gmv: 'R0', gmvDelta: '—',
+        tx: '0', txDelta: '—', avgTicket: '—',
+        location: 'Sandton City, JHB', terminals: 0, plan: 'Pro Plan (proposed)',
+        onboarded: 'Aug 2026 (est.)', manager: 'TBC',
+        openTickets: 0, csat: null,
+        notes: 'New branch opening August 2026. Terminal order pending. Pro Plan agreed in principle. Staff training required pre-launch.',
+        opportunities: ['Terminal order x2', 'Pro Plan onboarding', 'Staff training session', 'Yoco Capital drawdown']
+      },
+      {
+        name: merchant + ' — Melrose Arch',
+        accountId: 'SF-001-0444', status: 'Pending', gmv: 'R0', gmvDelta: '—',
+        tx: '0', txDelta: '—', avgTicket: '—',
+        location: 'Melrose Arch, JHB', terminals: 0, plan: 'Pro Plan (proposed)',
+        onboarded: 'Aug 2026 (est.)', manager: 'TBC',
+        openTickets: 0, csat: null,
+        notes: 'New branch opening August 2026. Smaller format than Sandton — projected lower volume. Contactless-first setup preferred by Emma.',
+        opportunities: ['Terminal order x1', 'Pro Plan onboarding', 'Contactless-optimised setup']
+      }
+    ],
+    consolidated: {
+      totalGMV: 'R68,400', totalGMVDelta: '+11.8%',
+      totalTx: '1,240', totalTxDelta: '+8.3%',
+      activeLocations: 2, pendingLocations: 2,
+      totalTerminals: 3, terminalsOnOrder: 3,
+      avgGMVPerLocation: 'R34,200',
+      totalOpenTickets: 2,
+      totalLifetimeGMV: 'R2.4M',
+      groupRevenuePotential: 'R136,800/mo (at full 4-location run rate)',
+      groupPlanOpportunity: 'All 4 locations on Pro Plan = R4,800/mo recurring',
+      capitalExposure: 'R80,000 pre-approved across group'
+    },
+    groupRisks: [
+      { risk: 'App reporting bug unresolved — affects all active locations, manual reconciliation ongoing', severity: 'High' },
+      { risk: 'Rosebank under-terminalled — single machine creating queue risk at peak times', severity: 'Medium' },
+      { risk: 'Two pending locations have no confirmed manager or staff — training pipeline at risk', severity: 'Medium' },
+      { risk: 'Gen2 terminal at Kramerville — aging hardware, connectivity issues reported', severity: 'Low' }
+    ],
+    groupOpportunities: [
+      { opp: 'Full Pro Plan rollout across all 4 locations', value: 'R4,800/mo recurring', stage: 'Negotiation' },
+      { opp: 'Terminal order — 3 new Neo units for Sandton, Melrose Arch, Rosebank', value: 'R7,200 once-off', stage: 'Proposal' },
+      { opp: 'Yoco Capital — group fit-out funding', value: 'R80,000', stage: 'Awareness' },
+      { opp: 'Xero multi-location sync setup', value: 'Retention / stickiness', stage: 'Awareness' }
+    ],
+    groupActivity: [
+      { date: 'Jun 3', type: 'Call', note: 'Emma confirmed August opening for Sandton and Melrose Arch. Pro Plan agreed in principle for all locations.' },
+      { date: 'May 15', type: 'Meeting', note: 'QBR — reviewed group performance. NPS 7. Flagged Rosebank growth outpacing Kramerville.' },
+      { date: 'Apr 28', type: 'Email', note: 'Sent Yoco Capital eligibility summary. Emma forwarded to accountant for review.' },
+      { date: 'Mar 12', type: 'Support', note: 'Resolved Xero sync delay at Rosebank. 3-day SLA met.' }
+    ]
+  };
+}
+
+const MSGS = ['Pulling account data...','Reading transaction history...','Scanning support tickets...','Checking Slack mentions...','Generating AI brief...'];
+let gmvChartInst = null, txChartInst = null;
+
+function getMockData(merchant) {
+  const n = merchant || 'this merchant';
+  return {
+    salesforce: {
+      tier: 'Key Account', segment: 'F&B / Hospitality', health: 85,
+      healthLabel: 'Strong',
+      lastActivity: '2026-06-03', lastActivityNote: 'Discovery call — discussed terminal expansion and Pro Plan upgrade',
+      nextActivity: '2026-06-17', nextActivityNote: 'Scheduled check-in call',
+      opportunities: [
+        { name: 'Terminal upsell x2', value: 'R4,800', stage: 'Proposal', close: 'Jun 30' },
+        { name: 'Pro Plan upgrade', value: 'R1,200/mo', stage: 'Negotiation', close: 'Jul 15' },
+        { name: 'Yoco Capital', value: 'R50,000', stage: 'Awareness', close: 'Aug 01' }
+      ],
+      tasks: [
+        { name: 'Follow up on app reporting bug', due: 'Jun 12', priority: 'High' },
+        { name: 'Send Pro Plan contract', due: 'Jun 14', priority: 'Medium' },
+        { name: 'Check terminal delivery ETA', due: 'Jun 20', priority: 'Low' }
+      ],
+      onboarded: '2023-08-12', lifetimeGMV: 'R2.4M', nps: 7,
+      accountOwner: 'Vaughn Kent-Brown', region: 'Gauteng',
+      industry: 'Coffee & Hospitality', employees: '25–50',
+      contacts: [
+        { name: 'Emma Joubert', role: 'Owner / Decision Maker', email: 'emma@strangers.co.za' },
+        { name: 'Liam Abrahams', role: 'Operations Manager', email: 'liam@strangers.co.za' }
+      ]
+    },
+    commercial: {
+      tpv: 'R68,400 / month', billingPackage: 'Starter Plan (upgrade opportunity)',
+      settlement: 'Daily — next business day', rates: { debit: '2.4%', credit: '2.95%', international: '3.5%' },
+      contractRenewal: '2027-01-15', paymentMethod: 'Debit order'
+    },
+    products: {
+      active: ['Yoco Card Machine Neo (x2)', 'Yoco Gateway — Shopify integration', 'Yoco App — transaction monitoring'],
+      integrations: ['Shopify (payment gateway)', 'Xero (accounting sync)'],
+      locations: ['Kramerville (primary)', 'Rosebank (secondary)'],
+      vetting: 'Clean — no flags', hardware: '2x Neo card readers, 1x older Gen2 (due for replacement)'
+    },
+    intercom: {
+      openTickets: 2, resolvedLast30: 4, lastContact: '2026-06-07', csat: 4.2, responseTime: '2.4 hrs avg',
+      issues: [
+        { title: 'Sales reports not pulling correctly on Yoco app', status: 'Open', priority: 'High', age: '12 days', id: 'TKT-4821' },
+        { title: 'Order routing intermittently failing at Rosebank location', status: 'Open', priority: 'Medium', age: '5 days', id: 'TKT-4956' },
+        { title: 'Terminal pairing issue on Gen2 device', status: 'Resolved', priority: 'Low', age: '18 days', id: 'TKT-4703' },
+        { title: 'Xero sync delay on weekend transactions', status: 'Resolved', priority: 'Low', age: '22 days', id: 'TKT-4678' }
+      ],
+      sentiment: 'Neutral trending negative — Emma is frustrated with the reporting bug duration. Positive about expansion plans and AM responsiveness.'
+    },
+    looker: {
+      gmv: 'R68,400', gmvDelta: '+11.8%', tx: '1,240', txDelta: '+8.3%', avg: 'R55.16', avgDelta: '+3.2%',
+      lifetimeGMV: 'R2.4M', onboardedYear: '2023',
+      trend: 'Consistent 3-month upward trajectory. Weekend volume accounts for 62% of weekly GMV. Rosebank location showing faster growth than Kramerville. Average basket size up 3.2% indicating higher-value transactions.',
+      gmvHistory: [41200, 45800, 52300, 58900, 61200, 68400],
+      txHistory: [820, 890, 980, 1090, 1145, 1240],
+      months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+    },
+    slack: {
+      mentions: [
+        { date: 'Jun 5', channel: '#am-team', text: 'Vaughn flagged app reporting bug escalated to product — TKT-4821 still unresolved, merchant becoming impatient.' },
+        { date: 'Jun 3', channel: '#key-accounts', text: 'Post-call update: Strangers Club confirmed 2 new branches opening August. Strong Pro Plan and Capital opportunity.' },
+        { date: 'May 28', channel: '#product-feedback', text: 'Reporting bug affecting multiple KA merchants including Strangers Club — product team aware, fix in next sprint.' }
+      ]
+    },
+    notion: {
+      lastUpdated: '2026-06-03',
+      briefs: [
+        { date: 'Jun 3', summary: 'Pre-call brief generated. Focus: terminal expansion, Pro Plan upsell, bug follow-up.' },
+        { date: 'May 15', summary: 'Meeting notes: Emma confirmed Rosebank branch performing well. Raised Xero sync issue (since resolved). Discussed Yoco Capital eligibility.' },
+        { date: 'Apr 28', summary: 'QBR completed. NPS score 7. Merchant satisfied overall but flagged desire for better multi-location reporting.' }
+      ]
+    }
+  };
+}
+
+function renderCharts(lk) {
+  if (gmvChartInst) gmvChartInst.destroy();
+  if (txChartInst) txChartInst.destroy();
+  const chartDefaults = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#999' } },
+      y: { grid: { color: '#F0EFE9' }, ticks: { font: { size: 10 }, color: '#999' } }
+    }
+  };
+  gmvChartInst = new Chart(document.getElementById('gmvChart'), {
+    type: 'bar',
+    data: {
+      labels: lk.months,
+      datasets: [{ data: lk.gmvHistory, backgroundColor: lk.gmvHistory.map((v,i) => i === lk.gmvHistory.length-1 ? '#0066FF' : '#C7D9FF'), borderRadius: 4 }]
+    },
+    options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => 'R' + (v/1000).toFixed(0) + 'k' } } } }
+  });
+  txChartInst = new Chart(document.getElementById('txChart'), {
+    type: 'line',
+    data: {
+      labels: lk.months,
+      datasets: [{ data: lk.txHistory, borderColor: '#0066FF', backgroundColor: 'rgba(0,102,255,0.06)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0066FF', fill: true, tension: 0.3 }]
+    },
+    options: chartDefaults
+  });
+}
+
+function populate(merchant, am, d) {
+  const lk = d.looker, sf = d.salesforce, ic = d.intercom, cm = d.commercial, pr = d.products;
+
+  document.getElementById('gmv').textContent = lk.gmv;
+  document.getElementById('gmvDelta').innerHTML = `<span class="up">${lk.gmvDelta} vs last month</span>`;
+  document.getElementById('txCount').textContent = lk.tx;
+  document.getElementById('txDelta').innerHTML = `<span class="up">${lk.txDelta} vs last month</span>`;
+  document.getElementById('avgTicket').textContent = lk.avg;
+  document.getElementById('ticketDelta').innerHTML = `<span class="up">${lk.avgDelta} vs last month</span>`;
+  document.getElementById('lifetimeGmv').textContent = lk.lifetimeGMV;
+  document.getElementById('lifetimeSince').textContent = `Since ${lk.onboardedYear}`;
+  document.getElementById('lookerNotes').textContent = lk.trend;
+  renderCharts(lk);
+
+  document.getElementById('salesforceContent').innerHTML = `
+    <div class="two-col" style="margin-bottom:14px">
+      <div>
+        <div class="col-label">Account</div>
+        <div class="info-row"><span class="info-label">Tier</span><span class="info-value"><span class="tag tag-blue">${sf.tier}</span></span></div>
+        <div class="info-row"><span class="info-label">Segment</span><span class="info-value">${sf.segment}</span></div>
+        <div class="info-row"><span class="info-label">Region</span><span class="info-value">${sf.region}</span></div>
+        <div class="info-row"><span class="info-label">Industry</span><span class="info-value">${sf.industry}</span></div>
+        <div class="info-row"><span class="info-label">Employees</span><span class="info-value">${sf.employees}</span></div>
+        <div class="info-row"><span class="info-label">On Yoco since</span><span class="info-value">${sf.onboarded}</span></div>
+        <div class="info-row"><span class="info-label">NPS score</span><span class="info-value">${sf.nps} / 10</span></div>
+      </div>
+      <div>
+        <div class="col-label">Key contacts</div>
+        ${sf.contacts.map(c => `<div style="margin-bottom:10px"><p style="font-weight:600;font-size:13px">${c.name}</p><p style="font-size:12px;color:#666">${c.role}</p><p style="font-size:12px;color:#0066FF">${c.email}</p></div>`).join('<div class="divider"></div>')}
+      </div>
+    </div>
+    <div class="col-label">Account health</div>
+    <div class="health-bar"><div class="health-fill" style="width:${sf.health}%"></div></div>
+    <p style="font-size:12px;color:#666;margin-bottom:14px">${sf.healthLabel} — ${sf.health}/100</p>
+    <div class="two-col">
+      <div>
+        <div class="col-label">Last activity</div>
+        <p style="font-size:13px"><strong>${sf.lastActivity}</strong> — ${sf.lastActivityNote}</p>
+      </div>
+      <div>
+        <div class="col-label">Next scheduled</div>
+        <p style="font-size:13px"><strong>${sf.nextActivity}</strong> — ${sf.nextActivityNote}</p>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="col-label">Open opportunities</div>
+      ${sf.opportunities.map(o => `<div class="info-row"><span class="info-label">${o.name}</span><span class="info-value"><span class="tag tag-blue">${o.stage}</span> ${o.value} · Close ${o.close}</span></div>`).join('')}
+    </div>
+    <div style="margin-top:14px">
+      <div class="col-label">Open tasks</div>
+      ${sf.tasks.map(t => `<div class="info-row"><span class="info-label">${t.name}</span><span class="info-value"><span class="tag ${t.priority==='High'?'tag-red':t.priority==='Medium'?'tag-amber':'tag-gray'}">${t.priority}</span> Due ${t.due}</span></div>`).join('')}
+    </div>`;
+
+  document.getElementById('commercialContent').innerHTML = `
+    <div class="two-col" style="margin-bottom:14px">
+      <div>
+        <div class="col-label">Volume & billing</div>
+        <div class="info-row"><span class="info-label">Monthly TPV</span><span class="info-value">${cm.tpv}</span></div>
+        <div class="info-row"><span class="info-label">Billing package</span><span class="info-value"><span class="tag tag-amber">${cm.billingPackage}</span></span></div>
+        <div class="info-row"><span class="info-label">Settlement</span><span class="info-value">${cm.settlement}</span></div>
+        <div class="info-row"><span class="info-label">Contract renewal</span><span class="info-value">${cm.contractRenewal}</span></div>
+        <div class="info-row"><span class="info-label">Payment method</span><span class="info-value">${cm.paymentMethod}</span></div>
+      </div>
+      <div>
+        <div class="col-label">Current rates</div>
+        <div class="info-row"><span class="info-label">Debit</span><span class="info-value">${cm.rates.debit}</span></div>
+        <div class="info-row"><span class="info-label">Credit</span><span class="info-value">${cm.rates.credit}</span></div>
+        <div class="info-row"><span class="info-label">International</span><span class="info-value">${cm.rates.international}</span></div>
+      </div>
+    </div>
+    <div class="col-label">Active products</div>
+    <p style="margin-bottom:8px">${pr.active.map(s=>`<span class="tag tag-green">${s}</span>`).join('')}</p>
+    <div class="two-col" style="margin-top:10px">
+      <div>
+        <div class="col-label">Integrations</div>
+        ${pr.integrations.map(i=>`<p style="font-size:13px;margin-bottom:4px">&#8226; ${i}</p>`).join('')}
+      </div>
+      <div>
+        <div class="col-label">Locations</div>
+        ${pr.locations.map(l=>`<p style="font-size:13px;margin-bottom:4px">&#8226; ${l}</p>`).join('')}
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="col-label">Hardware</div>
+      <p style="font-size:13px;color:#666">${pr.hardware}</p>
+    </div>
+    <div style="margin-top:8px">
+      <div class="col-label">Vetting status</div>
+      <span class="tag tag-green">${pr.vetting}</span>
+    </div>`;
+
+  document.getElementById('intercomContent').innerHTML = `
+    <div class="metric-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+      <div class="metric"><div class="metric-label">Open tickets</div><div class="metric-value" style="color:${ic.openTickets>1?'#DC2626':'#16A34A'}">${ic.openTickets}</div></div>
+      <div class="metric"><div class="metric-label">Resolved (30d)</div><div class="metric-value">${ic.resolvedLast30}</div></div>
+      <div class="metric"><div class="metric-label">CSAT score</div><div class="metric-value">${ic.csat}/5</div></div>
+      <div class="metric"><div class="metric-label">Avg response</div><div class="metric-value" style="font-size:15px">${ic.responseTime}</div></div>
+    </div>
+    <div class="col-label" style="margin-bottom:8px">Ticket history</div>
+    ${ic.issues.map(t=>`
+      <div class="info-row" style="align-items:flex-start;padding:8px 0">
+        <span class="info-label" style="flex:1">${t.id} — ${t.title}<br><span style="font-size:11px;color:#aaa">${t.age} ago</span></span>
+        <span class="info-value" style="display:flex;gap:4px;flex-shrink:0">
+          <span class="tag ${t.status==='Open'?'tag-red':'tag-green'}">${t.status}</span>
+          <span class="tag ${t.priority==='High'?'tag-red':t.priority==='Medium'?'tag-amber':'tag-gray'}">${t.priority}</span>
+        </span>
+      </div>`).join('')}
+    <div style="margin-top:12px;padding:10px 14px;background:#FFF7ED;border-radius:8px;font-size:13px;color:#92400E;border-left:3px solid #F59E0B">
+      <strong>Sentiment:</strong> ${ic.sentiment}
+    </div>`;
+
+  document.getElementById('slackContent').innerHTML = `
+    ${d.slack.mentions.map((m,i) => `
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="width:8px;height:8px;border-radius:50%;background:#4A154B;flex-shrink:0;margin-top:4px"></div>
+          ${i < d.slack.mentions.length-1 ? '<div style="width:1px;background:#E5E4E0;flex:1;min-height:20px;margin-top:3px"></div>' : ''}
+        </div>
+        <div style="flex:1">
+          <p style="font-size:11px;color:#888;margin-bottom:2px">${m.date} · <strong style="color:#4A154B">${m.channel}</strong></p>
+          <p style="font-size:13px;line-height:1.5;color:#333">${m.text}</p>
+        </div>
+      </div>`).join('')}`;
+
+  document.getElementById('notionContent').innerHTML = `
+    <p style="font-size:12px;color:#888;margin-bottom:12px">Last updated ${d.notion.lastUpdated}</p>
+    ${d.notion.briefs.map((b,i) => `
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="width:8px;height:8px;border-radius:50%;background:#1a1a1a;flex-shrink:0;margin-top:4px"></div>
+          ${i < d.notion.briefs.length-1 ? '<div style="width:1px;background:#E5E4E0;flex:1;min-height:20px;margin-top:3px"></div>' : ''}
+        </div>
+        <div style="flex:1">
+          <p style="font-size:11px;color:#888;margin-bottom:2px">${b.date}</p>
+          <p style="font-size:13px;line-height:1.5;color:#333">${b.summary}</p>
+        </div>
+      </div>`).join('')}`;
+}
+
+function populateGroup(merchant, gd) {
+  const ho = gd.headOffice, sub = gd.subAccounts, con = gd.consolidated;
+  document.getElementById('groupContent').innerHTML = `
+
+    <!-- HEAD OFFICE -->
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px;margin-bottom:16px">
+      <p style="font-size:11px;font-weight:700;color:#1D4ED8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">🏢 Head Office</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
+        <div><div class="metric-label">Account ID</div><div style="font-size:13px;font-weight:600">${ho.accountId}</div></div>
+        <div><div class="metric-label">Primary contact</div><div style="font-size:13px;font-weight:600">${ho.owner}</div><div style="font-size:11px;color:#666">${ho.ownerRole}</div></div>
+        <div><div class="metric-label">Billing contact</div><div style="font-size:12px;color:#333">${ho.billingContact}</div></div>
+        <div><div class="metric-label">Contract renewal</div><div style="font-size:13px;font-weight:600">${ho.contractRenewal}</div></div>
+        <div><div class="metric-label">Payment method</div><div style="font-size:12px;color:#333">${ho.paymentMethod}</div></div>
+        <div><div class="metric-label">On Yoco since</div><div style="font-size:13px;font-weight:600">${ho.onboarded}</div></div>
+      </div>
+    </div>
+
+    <!-- CONSOLIDATED METRICS -->
+    <div style="margin-bottom:16px">
+      <div class="col-label" style="margin-bottom:10px">Consolidated performance — all locations</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+        <div class="metric"><div class="metric-label">Total GMV</div><div class="metric-value">${con.totalGMV}</div><div class="metric-delta up">${con.totalGMVDelta}</div></div>
+        <div class="metric"><div class="metric-label">Transactions</div><div class="metric-value">${con.totalTx}</div><div class="metric-delta up">${con.totalTxDelta}</div></div>
+        <div class="metric"><div class="metric-label">Active locations</div><div class="metric-value">${con.activeLocations}</div><div style="font-size:11px;color:#F59E0B;font-weight:500">${con.pendingLocations} pending</div></div>
+        <div class="metric"><div class="metric-label">Terminals</div><div class="metric-value">${con.totalTerminals}</div><div style="font-size:11px;color:#888">${con.terminalsOnOrder} on order</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 12px">
+          <div class="metric-label" style="margin-bottom:4px">Group revenue potential</div>
+          <div style="font-size:13px;font-weight:600;color:#166534">${con.groupRevenuePotential}</div>
+        </div>
+        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 12px">
+          <div class="metric-label" style="margin-bottom:4px">Plan upgrade opportunity</div>
+          <div style="font-size:13px;font-weight:600;color:#1D4ED8">${con.groupPlanOpportunity}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUB ACCOUNTS TABLE -->
+    <div style="margin-bottom:16px">
+      <div class="col-label" style="margin-bottom:10px">Sub-accounts & locations</div>
+      <div style="border:1px solid #E5E4E0;border-radius:10px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;background:#F7F6F3;padding:8px 14px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;gap:8px">
+          <div>Account</div><div>GMV</div><div>Transactions</div><div>Plan</div><div>Status</div>
+        </div>
+        ${sub.map((s,i) => `
+          <div style="border-top:1px solid #F0EFE9;padding:12px 14px;background:${i%2===0?'#fff':'#FAFAF8'}">
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;align-items:start;margin-bottom:8px">
+              <div>
+                <p style="font-weight:600;font-size:13px;margin-bottom:1px">${s.name}</p>
+                <p style="font-size:11px;color:#888">${s.accountId} · ${s.location}</p>
+                <p style="font-size:11px;color:#666;margin-top:2px">Manager: ${s.manager}</p>
+              </div>
+              <div>
+                <p style="font-size:14px;font-weight:700">${s.gmv}</p>
+                <p style="font-size:11px;color:${s.gmvDelta==='—'?'#aaa':'#16A34A'}">${s.gmvDelta}</p>
+              </div>
+              <div>
+                <p style="font-size:14px;font-weight:700">${s.tx}</p>
+                <p style="font-size:11px;color:${s.txDelta==='—'?'#aaa':'#16A34A'}">${s.txDelta}</p>
+              </div>
+              <div><span class="tag tag-blue" style="font-size:11px">${s.plan}</span></div>
+              <div>
+                <span class="tag ${s.status==='Active'?'tag-green':s.status==='Pending'?'tag-amber':'tag-gray'}">${s.status}</span>
+                ${s.csat ? `<p style="font-size:11px;color:#888;margin-top:3px">CSAT ${s.csat}/5</p>` : ''}
+              </div>
+            </div>
+            <div style="background:#F7F6F3;border-radius:6px;padding:8px 10px;font-size:12px;color:#555;margin-bottom:6px">${s.notes}</div>
+            <p style="font-size:11px;color:#0066FF;font-weight:600">Opportunities: ${s.opportunities.join(' · ')}</p>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- GROUP OPPORTUNITIES -->
+    <div style="margin-bottom:16px">
+      <div class="col-label" style="margin-bottom:10px">Group-level opportunities</div>
+      ${gd.groupOpportunities.map(o => `
+        <div class="info-row">
+          <span class="info-label">${o.opp}</span>
+          <span class="info-value"><span class="tag tag-blue">${o.stage}</span> <strong>${o.value}</strong></span>
+        </div>`).join('')}
+    </div>
+
+    <!-- GROUP RISKS -->
+    <div style="margin-bottom:16px">
+      <div class="col-label" style="margin-bottom:10px">Group risks & watch outs</div>
+      ${gd.groupRisks.map(r => `
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;padding:8px 12px;background:${r.severity==='High'?'#FEF2F2':r.severity==='Medium'?'#FFF7ED':'#F9FAFB'};border-radius:7px;border-left:3px solid ${r.severity==='High'?'#EF4444':r.severity==='Medium'?'#F59E0B':'#9CA3AF'}">
+          <span class="tag ${r.severity==='High'?'tag-red':r.severity==='Medium'?'tag-amber':'tag-gray'}" style="flex-shrink:0">${r.severity}</span>
+          <span style="font-size:13px;color:#333;line-height:1.5">${r.risk}</span>
+        </div>`).join('')}
+    </div>
+
+    <!-- GROUP ACTIVITY TIMELINE -->
+    <div>
+      <div class="col-label" style="margin-bottom:10px">Group activity timeline</div>
+      ${gd.groupActivity.map((a,i) => `
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <div style="display:flex;flex-direction:column;align-items:center">
+            <div style="width:8px;height:8px;border-radius:50%;background:#1D4ED8;flex-shrink:0;margin-top:4px"></div>
+            ${i < gd.groupActivity.length-1 ? '<div style="width:1px;background:#DBEAFE;flex:1;min-height:20px;margin-top:3px"></div>' : ''}
+          </div>
+          <div style="flex:1;padding-bottom:4px">
+            <p style="font-size:11px;color:#888;margin-bottom:2px">${a.date} · <span class="tag tag-blue" style="font-size:10px;padding:1px 5px">${a.type}</span></p>
+            <p style="font-size:13px;line-height:1.5;color:#333">${a.note}</p>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <p style="font-size:12px;color:#888;margin-top:12px;padding-top:10px;border-top:1px solid #E5E4E0">&#9432; When Salesforce is connected, this pulls live parent/child account hierarchy, real GMV per location, and all linked opportunities automatically.</p>
+  `;
+}
+
+function buildPrompt(merchant, am, d, slackData, notionData) {
+  const sf = d.salesforce, lk = d.looker, ic = d.intercom;
+  return `You are a senior Account Manager coach at Yoco, a South African fintech. Prepare a detailed, actionable pre-meeting brief for AM ${am} about to contact ${merchant}.
+
+ACCOUNT: ${sf.tier}, ${sf.segment}, ${sf.region}. NPS: ${sf.nps}/10. Health: ${sf.healthLabel}.
+CONTACTS: ${sf.contacts.map(c=>c.name+' ('+c.role+')').join(', ')}.
+LAST ACTIVITY: ${sf.lastActivityNote} on ${sf.lastActivity}.
+OPPORTUNITIES: ${sf.opportunities.map(o=>o.name+' '+o.value+' ('+o.stage+')').join('; ')}.
+OPEN TASKS: ${sf.tasks.map(t=>t.name+' — '+t.priority+' priority, due '+t.due).join('; ')}.
+COMMERCIAL: TPV ${d.commercial.tpv}. Package: ${d.commercial.billingPackage}. Rates: debit ${d.commercial.rates.debit}, credit ${d.commercial.rates.credit}.
+PRODUCTS: ${d.products.active.join('; ')}. Integrations: ${d.products.integrations.join(', ')}.
+TRANSACTION TREND: GMV ${lk.gmv} (${lk.gmvDelta}), ${lk.tx} transactions (${lk.txDelta}). ${lk.trend}
+SUPPORT: ${ic.openTickets} open tickets, CSAT ${ic.csat}/5. ${ic.sentiment}
+OPEN ISSUES: ${ic.issues.filter(t=>t.status==='Open').map(t=>t.title).join('; ')}.
+SLACK INTEL: ${slackData || 'No Slack data available'}
+NOTION HISTORY: ${notionData || 'No Notion data available'}
+
+Write a comprehensive brief in this exact format:
+
+SITUATION:
+[2-3 sentences on where this merchant is right now — growth trajectory, key risks, relationship status]
+
+KEY TALKING POINTS:
+- [Most important topic — be specific]
+- [Second topic]
+- [Third topic]
+- [Fourth topic if relevant]
+
+UPSELL & GROWTH OPPORTUNITIES:
+- [Best opportunity with reasoning]
+- [Second opportunity]
+
+RISKS & WATCH OUTS:
+- [Main risk with context]
+- [Second risk if relevant]
+
+RECOMMENDED ACTIONS THIS CALL:
+1. [Specific action — expected outcome]
+2. [Specific action — expected outcome]
+3. [Specific action — expected outcome]
+
+TONE & APPROACH:
+[3 sentences on how to read Emma, how to open the call, and what to avoid given current sentiment]
+
+Rules: Be specific and use the data. No invented details. One to two lines per point.`;
+}
+
+function setDot(id, state) {
+  const d = document.getElementById(id);
+  if (!d) return;
+  d.className = 'source-dot' + (state ? ' ' + state : '');
+  if (state === 'loading') { d.style.animation = 'pulse 1s infinite'; }
+  else { d.style.animation = ''; }
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function callGemini(prompt, apiKey, maxTokens) {
+  // Calls the Vercel serverless proxy — key is stored securely as env var on server
+  const res = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, maxTokens: maxTokens || 1200 })
+  });
+  if (!res.ok) {
+    const e = await res.json();
+    const msg = e.error || 'Gemini API error';
+    if (res.status === 429) throw new Error('Rate limit hit — wait a moment and try again');
+    if (res.status === 500 && msg.includes('not configured')) throw new Error('Gemini API key not set on server — add GEMINI_API_KEY in Vercel environment variables');
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  return data.text || '';
+}
+
+async function fetchSlackData(merchant) {
+  // Slack MCP only available via Claude.ai — returns mock in standalone mode
+  setDot('dot-slack', 'mock');
+  document.getElementById('slack-status').textContent = 'Mock';
+  const d = getMockData(merchant);
+  return d.slack.mentions.map(m => m.date + ' · ' + m.channel + ': ' + m.text).join('\n\n');
+}
+
+async function fetchNotionData(merchant) {
+  // Notion MCP only available via Claude.ai — returns mock in standalone mode
+  setDot('dot-notion', 'mock');
+  document.getElementById('notion-status').textContent = 'Mock';
+  const d = getMockData(merchant);
+  return d.notion.briefs.map(b => b.date + ': ' + b.summary).join('\n\n');
+}
+
+async function generateBrief() {
+  const merchant = document.getElementById('merchantName').value.trim();
+  const am = document.getElementById('amName').value.trim();
+  if (!merchant) { document.getElementById('merchantName').focus(); return; }
+
+  document.getElementById('briefOutput').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('generateBtn').disabled = true;
+
+  let idx = 0;
+  const ticker = setInterval(() => {
+    idx = (idx+1) % MSGS.length;
+    document.getElementById('loadingMsg').textContent = MSGS[idx];
+  }, 1200);
+
+  try {
+    const isGroup = document.getElementById('isGroupAccount').checked;
+    const d = getMockData(merchant);
+    populate(merchant, am, d);
+
+    if (isGroup) {
+      const gd = getGroupMockData(merchant);
+      populateGroup(merchant, gd);
+      document.getElementById('groupSection').style.display = 'block';
+    } else {
+      document.getElementById('groupSection').style.display = 'none';
+    }
+
+    // Show loading state for Slack (blocking) and Notion (non-blocking)
+    document.getElementById('slackContent').innerHTML = '<p style="font-size:13px;color:#888;font-style:italic">Searching Slack...</p>';
+    document.getElementById('notionContent').innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#888">
+        <div style="width:12px;height:12px;border:2px solid #E5E4E0;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>
+        Searching Notion in the background...
+      </div>`;
+    setDot('dot-slack', 'loading');
+    setDot('dot-notion', 'loading');
+    document.getElementById('slack-status').textContent = 'Searching...';
+    document.getElementById('notion-status').textContent = 'Loading...';
+
+    // Fetch Slack only (blocking) — Notion runs in background
+    const slackData = await fetchSlackData(merchant);
+    document.getElementById('slackContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${escapeHtml(slackData)}</p>`;
+
+    // Fire Notion in background — don't await it
+    fetchNotionData(merchant).then(notionData => {
+      document.getElementById('notionContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${escapeHtml(notionData)}</p>`;
+    }).catch(() => {
+      document.getElementById('notionContent').innerHTML = '<p style="font-size:13px;color:#aaa;font-style:italic">Notion search timed out — try refreshing.</p>';
+      setDot('dot-notion', 'mock');
+      document.getElementById('notion-status').textContent = 'Timed out';
+    });
+
+    // Generate AI synthesis immediately with Slack data — Notion will update separately
+    const res = await callGemini(buildPrompt(merchant, am, d, slackData, 'Notion search in progress — not yet available'), null, 1200);
+    document.getElementById('aiContent').textContent = res;
+
+    document.getElementById('briefTitle').textContent = merchant;
+    document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${am}`;
+
+    clearInterval(ticker);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('briefOutput').style.display = 'block';
+
+  } catch(err) {
+    clearInterval(ticker);
+    document.getElementById('loading').style.display = 'none';
+    showError(err.message);
+  }
+  document.getElementById('generateBtn').disabled = false;
+}
+
+function showError(message) {
+  const box = document.getElementById('errorBox');
+  const msg = document.getElementById('errorMsg');
+  const reasonsBox = document.getElementById('errorReasons');
+  const stepsBox = document.getElementById('errorSteps');
+  const reasonList = document.getElementById('errorReasonList');
+  const stepList = document.getElementById('errorStepList');
+
+  let reasons = [];
+  let steps = [];
+
+  if (message.includes('401') || message.includes('auth') || message.toLowerCase().includes('api key') || message.toLowerCase().includes('authentication')) {
+    msg.textContent = 'Authentication failed — the API key is missing or invalid.';
+    reasons = [
+      'The Anthropic API key has not been configured in this tool',
+      'The API key may have expired or been revoked',
+      'You may be running this file locally where auth is not passed through'
+    ];
+    steps = [
+      'If using inside Claude.ai — this should work automatically. Try refreshing the page.',
+      'If running locally — add your Anthropic API key to the fetch headers in the HTML file.',
+      'Get an API key at console.anthropic.com if you don\'t have one.'
+    ];
+  } else if (message.includes('429') || message.toLowerCase().includes('rate limit') || message.toLowerCase().includes('too many')) {
+    msg.textContent = 'Rate limit hit — too many requests in a short period.';
+    reasons = [
+      'Multiple briefs were generated in quick succession',
+      'Your API usage tier has a lower rate limit',
+      'The Slack or Notion MCP calls may have triggered additional limits'
+    ];
+    steps = [
+      'Wait 30–60 seconds and try again.',
+      'If this happens regularly, consider upgrading your Anthropic API tier.',
+      'Try generating one brief at a time rather than multiple quickly.'
+    ];
+  } else if (message.includes('500') || message.includes('502') || message.includes('503') || message.toLowerCase().includes('server')) {
+    msg.textContent = 'Server error — the AI service returned an unexpected error.';
+    reasons = [
+      'Anthropic\'s API may be experiencing temporary issues',
+      'The request payload may have been too large',
+      'A downstream MCP service (Slack or Notion) may be unavailable'
+    ];
+    steps = [
+      'Wait a moment and try again — this is usually temporary.',
+      'Check status.anthropic.com for any known outages.',
+      'Try disabling Slack or Notion search temporarily to isolate the issue.'
+    ];
+  } else if (message.toLowerCase().includes('network') || message.toLowerCase().includes('fetch') || message.toLowerCase().includes('failed to fetch')) {
+    msg.textContent = 'Network error — could not connect to the API.';
+    reasons = [
+      'No internet connection at the time of the request',
+      'A browser extension (e.g. ad blocker) may be blocking the API call',
+      'The tool is being run in an environment that blocks external API calls',
+      'CORS restrictions may be preventing the request from a local file'
+    ];
+    steps = [
+      'Check your internet connection and try again.',
+      'If running locally, try opening the file via a local server instead of file://',
+      'Disable browser extensions temporarily and retry.',
+      'Use the tool inside Claude.ai where API calls are handled natively.'
+    ];
+  } else if (message.toLowerCase().includes('timeout') || message.toLowerCase().includes('timed out')) {
+    msg.textContent = 'Request timed out — the API took too long to respond.';
+    reasons = [
+      'Slack or Notion search took longer than expected',
+      'The AI synthesis step timed out on a complex prompt',
+      'Slow network connection causing the request to hang'
+    ];
+    steps = [
+      'Try again — timeouts are usually intermittent.',
+      'Check your connection speed.',
+      'If it happens repeatedly, try a shorter merchant name search to reduce data volume.'
+    ];
+  } else if (message.toLowerCase().includes('notion') || message.toLowerCase().includes('slack')) {
+    msg.textContent = 'A connected data source failed to respond.';
+    reasons = [
+      'The Slack or Notion MCP connection may have timed out',
+      'Your Slack or Notion session may need to be re-authenticated in Claude.ai',
+      'The merchant name may not match any pages or channels'
+    ];
+    steps = [
+      'Try reconnecting Slack and Notion in Claude.ai settings.',
+      'The brief will still generate — Slack and Notion failures are non-blocking.',
+      'Check that the merchant name is spelled correctly as it appears in Notion.'
+    ];
+  } else {
+    msg.textContent = 'An unexpected error occurred: ' + message;
+    reasons = [
+      'An unknown error was returned by the API',
+      'The response format may have been unexpected',
+      'A temporary issue with one of the connected services'
+    ];
+    steps = [
+      'Try generating the brief again.',
+      'If the error persists, note the error message and contact support.',
+      'Try refreshing the page and starting again.'
+    ];
+  }
+
+  reasonList.innerHTML = reasons.map(r => `<li>${r}</li>`).join('');
+  stepList.innerHTML = steps.map(s => `<li>${s}</li>`).join('');
+  reasonsBox.style.display = 'block';
+  stepsBox.style.display = 'block';
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function retryBrief() {
+  document.getElementById('errorBox').style.display = 'none';
+  generateBrief();
+}
+
+async function summariseMeeting() {
+  const notes = document.getElementById('postNotes').value.trim();
+  const merchant = document.getElementById('briefTitle').textContent;
+  const am = document.getElementById('amName').value.trim();
+  if (!notes) { document.getElementById('postStatus').textContent = 'Please add meeting notes first.'; return; }
+
+  document.getElementById('summariseBtn').disabled = true;
+  document.getElementById('postStatus').textContent = 'Summarising...';
+
+  try {
+    const raw = await callGemini(`You are an AM assistant at Yoco. Summarise these meeting notes for merchant "${merchant}" and extract a Salesforce task.
+
+Notes: ${notes}
+
+Respond in JSON only, no markdown:
+{
+  "summary": "3-4 sentence professional summary of the meeting",
+  "key_highlights": ["highlight 1", "highlight 2", "highlight 3"],
+  "next_actions": ["action 1", "action 2"],
+  "task_subject": "Follow-up — [merchant] — [main topic]",
+  "task_description": "2 sentence task description for Salesforce",
+  "task_due_date": "date in YYYY-MM-DD format, 5 business days from today",
+  "task_priority": "High or Medium or Low"
+}`, apiKey, 800);
+    const data = JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    const summaryHtml = `${data.summary}\n\nKey highlights:\n${data.key_highlights.map(h=>'• '+h).join('\n')}\n\nNext actions:\n${data.next_actions.map(a=>'→ '+a).join('\n')}`;
+    document.getElementById('postSummaryBox').textContent = summaryHtml;
+
+    const dueDate = data.task_due_date || new Date(Date.now()+5*86400000).toISOString().split('T')[0];
+    document.getElementById('sfTaskRows').innerHTML = `
+      <div class="sf-task-row"><span>Subject</span><span>${data.task_subject}</span></div>
+      <div class="sf-task-row"><span>Description</span><span>${data.task_description}</span></div>
+      <div class="sf-task-row"><span>Assigned to</span><span>${am}</span></div>
+      <div class="sf-task-row"><span>Related to</span><span>${merchant}</span></div>
+      <div class="sf-task-row"><span>Due date</span><span>${dueDate}</span></div>
+      <div class="sf-task-row"><span>Priority</span><span>${data.task_priority}</span></div>
+      <div class="sf-task-row"><span>Status</span><span><span class="success-pill">&#10003; Created (mock)</span></span></div>`;
+
+    document.getElementById('postSummaryOut').style.display = 'block';
+    document.getElementById('sfTaskBox').style.display = 'block';
+    document.getElementById('postStatus').textContent = '';
+
+  } catch(err) {
+    document.getElementById('postStatus').textContent = 'Error: ' + err.message;
+  }
+  document.getElementById('summariseBtn').disabled = false;
+}
+
+async function saveToNotion() {
+  const merchant = document.getElementById('briefTitle').textContent;
+  const am = document.getElementById('amName').value.trim();
+  const meta = document.getElementById('briefMeta').textContent;
+  const aiSummary = document.getElementById('aiContent').textContent;
+  const slackData = document.getElementById('slackContent').textContent;
+  const lookerNotes = document.getElementById('lookerNotes').textContent;
+  const notionData = document.getElementById('notionContent').textContent;
+
+  if (!merchant) return;
+
+  const btn = document.getElementById('saveNotionBtn');
+  const statusBar = document.getElementById('notionSaveStatus');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  statusBar.style.display = 'flex';
+  statusBar.innerHTML = '<div style="width:12px;height:12px;border:2px solid #E5E4E0;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div><span style="color:#888">Saving to Notion AM Briefings TEST...</span>';
+
+  const today = new Date().toISOString().split('T')[0];
+  const followUpDate = new Date(Date.now() + 5*86400000).toISOString().split('T')[0];
+
+  // Parse sections from AI summary
+  const lines = aiSummary.split('\n');
+  let keyRisks = '', nextActions = '', context = '', recommended = '';
+  let currentSection = '';
+  for (const line of lines) {
+    if (line.startsWith('SITUATION')) { currentSection = 'context'; continue; }
+    if (line.startsWith('KEY TALKING')) { currentSection = 'talking'; continue; }
+    if (line.startsWith('RISKS') || line.startsWith('WATCH OUT')) { currentSection = 'risks'; continue; }
+    if (line.startsWith('RECOMMENDED ACTIONS')) { currentSection = 'actions'; continue; }
+    if (line.startsWith('TONE') || line.startsWith('UPSELL')) { currentSection = 'recommended'; continue; }
+    if (currentSection === 'context' && line.trim()) context += line.trim() + ' ';
+    if (currentSection === 'risks' && line.trim()) keyRisks += line.trim() + '\n';
+    if (currentSection === 'actions' && line.trim()) nextActions += line.trim() + '\n';
+    if (currentSection === 'recommended' && line.trim()) recommended += line.trim() + ' ';
+  }
+
+  // Note: Save to Notion uses Claude API via claude.ai MCP — works inside Claude.ai only
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        mcp_servers: [{ type: 'url', url: 'https://mcp.notion.com/mcp', name: 'notion' }],
+        messages: [{
+          role: 'user',
+          content: `Create a new page in the Notion database with ID 9a7ba43eb13582acade68189d20d1327.
+
+Set these properties exactly:
+- Title (Engagement): "Briefing — ${merchant} — ${today}"
+- Account manager: "${am}"
+- Context: "${context.trim().replace(/"/g, "'")}"
+- Key risks: "${keyRisks.trim().replace(/"/g, "'")}"
+- Next best actions: "${nextActions.trim().replace(/"/g, "'")}"
+- Recent activity: "${slackData.trim().slice(0, 500).replace(/"/g, "'")}"
+- Recommended: "${recommended.trim().replace(/"/g, "'")}"
+- Follow-up date: "${followUpDate}"
+- Sources used: "Salesforce (mock), Intercom (mock), Looker (mock), Slack (live), Notion (live)"
+
+Then add these blocks to the page body in order:
+
+1. Heading 2: "AI Synthesis"
+2. Paragraph: "${aiSummary.trim().slice(0, 1800).replace(/"/g, "'")}"
+3. Divider
+4. Heading 2: "Slack Intel"
+5. Paragraph: "${slackData.trim().slice(0, 800).replace(/"/g, "'")}"
+6. Divider
+7. Heading 2: "Transaction Notes"
+8. Paragraph: "${lookerNotes.trim().replace(/"/g, "'")}"
+9. Divider
+10. Heading 2: "Notion History"
+11. Paragraph: "${notionData.trim().slice(0, 800).replace(/"/g, "'")}"
+
+After creating successfully respond with exactly: PAGE_CREATED followed by the page URL if available.`
+        }]
+      })
+    });
+
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+
+    if (text.includes('PAGE_CREATED') || text.toLowerCase().includes('created') || text.toLowerCase().includes('success')) {
+      const urlMatch = text.match(/https:\/\/www\.notion\.so\/[^\s)]+/);
+      const notionUrl = urlMatch ? urlMatch[0] : null;
+      statusBar.innerHTML = `<span style="color:#166534;font-weight:600">✓ Saved to Notion — AM Briefings TEST</span>${notionUrl ? ' &nbsp;<a href="' + notionUrl + '" target="_blank" style="color:#0066FF;font-weight:500;text-decoration:none">Open page →</a>' : ''}`;
+      btn.textContent = '✓ Saved';
+      btn.style.background = '#16A34A';
+      btn.style.borderColor = '#16A34A';
+    } else {
+      throw new Error('Unexpected response — ' + text.slice(0, 150));
+    }
+
+  } catch(err) {
+    statusBar.innerHTML = '<span style="color:#B91C1C">✗ Failed to save: ' + err.message + '</span>';
+    btn.textContent = 'Save to Notion';
+    btn.disabled = false;
+    btn.style.background = '#1a1a1a';
+    btn.style.borderColor = '#1a1a1a';
+  }
+}
+
+function copyBrief() {
+  const text = [
+    'YOCO AM BRIEF — ' + document.getElementById('briefTitle').textContent,
+    document.getElementById('briefMeta').textContent,
+    '\nAI SYNTHESIS:\n' + document.getElementById('aiContent').textContent
+  ].join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target; btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy brief', 1500);
+  });
+}
+
+function resetForm() {
+  document.getElementById('merchantName').value = '';
+  document.getElementById('briefOutput').style.display = 'none';
+  document.getElementById('postNotes').value = '';
+  document.getElementById('postSummaryOut').style.display = 'none';
+  document.getElementById('postStatus').textContent = '';
+  document.getElementById('isGroupAccount').checked = false;
+  document.getElementById('groupOptions').style.display = 'none';
+  document.getElementById('groupSection').style.display = 'none';
+  document.getElementById('saveNotionBtn').textContent = 'Save to Notion';
+  document.getElementById('saveNotionBtn').disabled = false;
+  document.getElementById('saveNotionBtn').style.background = '#1a1a1a';
+  document.getElementById('saveNotionBtn').style.borderColor = '#1a1a1a';
+  document.getElementById('notionSaveStatus').style.display = 'none';
+  setDot('dot-slack', '');
+  setDot('dot-notion', '');
+  if(document.getElementById('slack-status')) document.getElementById('slack-status').textContent = 'Ready';
+  if(document.getElementById('notion-status')) document.getElementById('notion-status').textContent = 'Ready';
+  document.getElementById('merchantName').focus();
+}
+</script>
+</body>
+</html>
