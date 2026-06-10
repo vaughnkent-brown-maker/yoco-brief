@@ -9,90 +9,38 @@ export default async function handler(req, res) {
   const { amName, merchant, briefUrl } = req.body;
   if (!amName || !merchant) return res.status(400).json({ error: 'AM name and merchant required' });
 
-  // Map of AM names to their Slack email or known display names
-  // Add more as needed
-  const AM_SLACK_MAP = {
-    'vaughn kent-brown': 'vaughn',
-    'bianca muratu': 'bianca',
-    'diaan wiese': 'diaan',
-    'melissa barnes': 'melissa',
-    'lebohang mdakane': 'lebo',
-    'nomahlubi madikgetla': 'nomahlubi',
-    'katlego ramasodi': 'katlego'
+  // Hardcoded Slack user IDs for each AM — avoids expensive users.list lookup
+  // Get your ID from Slack: click your profile -> ... -> Copy member ID
+  const AM_IDS = {
+    'vaughn kent-brown': process.env.SLACK_USER_ID_VAUGHN || '',
+    'bianca muratu': process.env.SLACK_USER_ID_BIANCA || '',
+    'diaan wiese': process.env.SLACK_USER_ID_DIAAN || '',
+    'melissa barnes': process.env.SLACK_USER_ID_MELISSA || '',
+    'lebohang mdakane': process.env.SLACK_USER_ID_LEBO || '',
+    'nomahlubi madikgetla': process.env.SLACK_USER_ID_NOMAHLUBI || '',
+    'katlego ramasodi': process.env.SLACK_USER_ID_KATLEGO || ''
   };
 
-  try {
-    // Fetch all users with pagination
-    let allMembers = [];
-    let cursor = '';
-    for (let i = 0; i < 5; i++) {
-      const url = `https://slack.com/api/users.list?limit=200${cursor ? '&cursor=' + cursor : ''}`;
-      const usersRes = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const usersData = await usersRes.json();
-      if (!usersData.ok) {
-        return res.status(400).json({ error: 'Could not fetch Slack users: ' + usersData.error });
-      }
-      allMembers = allMembers.concat(usersData.members || []);
-      cursor = usersData.response_metadata?.next_cursor || '';
-      if (!cursor) break;
-    }
-    const usersData = { ok: true, members: allMembers };
+  const userId = AM_IDS[amName.toLowerCase()];
 
-    const amLower = amName.toLowerCase();
-    const amParts = amLower.split(' ');
-    const amFirstName = amParts[0];
-    const amLastName = amParts[amParts.length - 1];
-    const knownAlias = AM_SLACK_MAP[amLower] || amFirstName;
-
-    // Try multiple matching strategies
-    const user = usersData.members?.find(u => {
-      if (u.deleted || u.is_bot) return false;
-      const display = (u.profile?.display_name || '').toLowerCase();
-      const real = (u.profile?.real_name || '').toLowerCase();
-      const email = (u.profile?.email || '').toLowerCase();
-      const name = (u.name || '').toLowerCase();
-
-      return (
-        // Full name match
-        real.includes(amFirstName) && real.includes(amLastName) ||
-        display.includes(amFirstName) && display.includes(amLastName) ||
-        // First name only match
-        display === amFirstName ||
-        real.startsWith(amFirstName) ||
-        name === amFirstName ||
-        // Known alias match
-        display.includes(knownAlias) ||
-        name.includes(knownAlias) ||
-        // Email match
-        email.startsWith(amFirstName)
-      );
+  if (!userId) {
+    return res.status(404).json({
+      error: `No Slack ID configured for "${amName}"`,
+      hint: 'Add SLACK_USER_ID_VAUGHN etc to Vercel environment variables. Get IDs from Slack profile -> ... -> Copy member ID'
     });
+  }
 
-    if (!user) {
-      // Log all users for debugging
-      const allNames = usersData.members
-        ?.filter(u => !u.deleted && !u.is_bot)
-        .map(u => u.profile?.real_name || u.name)
-        .slice(0, 50);
-      return res.status(404).json({
-        error: `Could not find Slack user for "${amName}"`,
-        hint: 'Check that the AM name matches their Slack profile',
-        sampleUsers: allNames
-      });
-    }
-
-    // Open DM
+  try {
+    // Open DM directly with user ID
     const dmRes = await fetch('https://slack.com/api/conversations.open', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ users: user.id })
+      body: JSON.stringify({ users: userId })
     });
     const dmData = await dmRes.json();
     if (!dmData.ok) return res.status(400).json({ error: 'Could not open DM: ' + dmData.error });
 
-    // Send message
+    // Send notification
     const msgRes = await fetch('https://slack.com/api/chat.postMessage', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -124,7 +72,7 @@ export default async function handler(req, res) {
     const msgData = await msgRes.json();
     if (!msgData.ok) return res.status(400).json({ error: 'Could not send message: ' + msgData.error });
 
-    return res.status(200).json({ success: true, userId: user.id, userName: user.profile?.real_name });
+    return res.status(200).json({ success: true, userId });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
