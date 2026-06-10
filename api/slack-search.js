@@ -89,7 +89,10 @@ export default async function handler(req, res) {
 
       // Resolve user mentions in text
       let text = (m.text || '').slice(0, 300);
-      text = text.replace(/<@([A-Z0-9]+)>/g, (match, uid) => '@' + (userMap[uid] || uid));
+      text = text.replace(/<@([A-Z0-9]+)(?:\|([^>]+))?>/g, (match, uid, name) => '@' + (name || userMap[uid] || uid));
+      text = text.replace(/&amp;/g, '&');
+      text = text.replace(/&lt;/g, '<');
+      text = text.replace(/&gt;/g, '>');
 
       const author = userMap[m.user] || m.username || 'Unknown';
       return `[${date}] #${channelName} — ${author}: ${text}`;
@@ -116,8 +119,11 @@ LATEST UPDATE: [most recent thing mentioned]
 
 Keep it tight and factual. Only include what is in the messages.`;
 
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiKey}`,
+        // Try models in order
+        let geminiRes = null;
+        for (const model of ['gemini-3.5-flash', 'gemini-2.5-flash-preview-05-20', 'gemini-1.5-flash']) {
+          geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -125,10 +131,11 @@ Keep it tight and factual. Only include what is in the messages.`;
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { maxOutputTokens: 400, temperature: 0.2 }
             })
-          }
-        );
+          });
+          if (geminiRes.ok) break;
+        }
 
-        if (geminiRes.ok) {
+        if (geminiRes && geminiRes.ok) {
           const geminiData = await geminiRes.json();
           const summary = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
           if (summary) {
