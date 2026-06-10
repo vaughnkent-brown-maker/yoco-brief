@@ -207,6 +207,18 @@
     </div>
   </div>
 
+  <!-- Restored brief banner — shown when brief is loaded from URL hash -->
+  <div id="restoredBanner" style="display:none;background:#1a1a1a;color:#fff;border-radius:10px;padding:12px 18px;margin-bottom:1.25rem;display:none;align-items:center;justify-content:space-between;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">🔗</span>
+      <div>
+        <p style="font-size:13px;font-weight:600">Viewing a saved brief</p>
+        <p style="font-size:12px;color:#aaa" id="restoredBannerMeta"></p>
+      </div>
+    </div>
+    <button onclick="startFresh()" style="height:32px;padding:0 14px;background:#fff;color:#1a1a1a;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">Generate new brief</button>
+  </div>
+
   <div class="data-sources">
     <div class="source-pill"><div class="source-dot mock"></div><div><strong>Salesforce</strong>Mock data</div></div>
     <div class="source-pill"><div class="source-dot mock"></div><div><strong>Intercom</strong>Mock data</div></div>
@@ -434,6 +446,99 @@ function getGroupMockData(merchant) {
       { date: 'Mar 12', type: 'Support', note: 'Resolved Xero sync delay at Rosebank. 3-day SLA met.' }
     ]
   };
+}
+
+// On page load — check if URL has encoded brief data and restore it
+window.addEventListener('load', () => {
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#brief=')) {
+    try {
+      const encoded = hash.replace('#brief=', '');
+      const json = JSON.parse(decodeURIComponent(atob(encoded)));
+      restoreBrief(json);
+    } catch(e) {
+      console.log('Could not restore brief from URL:', e.message);
+    }
+  }
+});
+
+function restoreBrief(data) {
+  const { merchant, am, meta, aiContent, slackContent, notionContent, lookerNotes, gmv, gmvDelta, tx, txDelta, avg, ticketDelta } = data;
+
+  document.getElementById('merchantName').value = merchant;
+  document.getElementById('amName').value = am;
+
+  // Restore metrics
+  if (gmv) {
+    document.getElementById('gmv').textContent = gmv;
+    document.getElementById('gmvDelta').innerHTML = `<span class="up">${gmvDelta}</span>`;
+    document.getElementById('txCount').textContent = tx;
+    document.getElementById('txDelta').innerHTML = `<span class="up">${txDelta}</span>`;
+    document.getElementById('avgTicket').textContent = avg;
+    document.getElementById('ticketDelta').innerHTML = `<span class="up">${ticketDelta}</span>`;
+    document.getElementById('lookerNotes').textContent = lookerNotes;
+  }
+
+  // Restore live sections
+  if (slackContent) document.getElementById('slackContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${slackContent}</p>`;
+  if (notionContent) document.getElementById('notionContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${notionContent}</p>`;
+  if (aiContent) document.getElementById('aiContent').textContent = aiContent;
+
+  // Restore mock sections
+  const d = getMockData(merchant);
+  const sf = d.salesforce, ic = d.intercom;
+  document.getElementById('salesforceContent').innerHTML = `
+    <div class="two-col" style="margin-bottom:14px">
+      <div>
+        <div class="col-label">Account</div>
+        <div class="info-row"><span class="info-label">Tier</span><span class="info-value"><span class="tag tag-blue">${sf.tier}</span></span></div>
+        <div class="info-row"><span class="info-label">Segment</span><span class="info-value">${sf.segment}</span></div>
+        <div class="info-row"><span class="info-label">On Yoco since</span><span class="info-value">${sf.onboarded}</span></div>
+      </div>
+    </div>`;
+
+  document.getElementById('briefTitle').textContent = merchant;
+  document.getElementById('briefMeta').textContent = meta || `Restored brief · AM: ${am}`;
+  document.getElementById('briefOutput').style.display = 'block';
+  document.getElementById('loading').style.display = 'none';
+
+  // Show restored banner, hide search form
+  const banner = document.getElementById('restoredBanner');
+  banner.style.display = 'flex';
+  document.getElementById('restoredBannerMeta').textContent = meta || '';
+  document.getElementById('briefOutput').scrollIntoView({ behavior: 'smooth' });
+}
+
+function startFresh() {
+  // Clear hash and reset to fresh state
+  window.history.replaceState(null, '', window.location.pathname);
+  document.getElementById('restoredBanner').style.display = 'none';
+  document.getElementById('briefOutput').style.display = 'none';
+  document.getElementById('merchantName').value = '';
+  document.getElementById('postNotes').value = '';
+  document.getElementById('postSummaryOut').style.display = 'none';
+  document.getElementById('isGroupAccount').checked = false;
+  document.getElementById('groupOptions').style.display = 'none';
+  document.getElementById('groupSection').style.display = 'none';
+  setDot('dot-slack', '');
+  setDot('dot-notion', '');
+  if(document.getElementById('slack-status')) document.getElementById('slack-status').textContent = 'Ready';
+  if(document.getElementById('notion-status')) document.getElementById('notion-status').textContent = 'Ready';
+  document.getElementById('merchantName').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function encodeBriefToUrl(merchant, am, meta, aiContent, slackContent, notionContent, lookerData) {
+  const data = {
+    merchant, am, meta, aiContent,
+    slackContent: (slackContent || '').slice(0, 1000),
+    notionContent: (notionContent || '').slice(0, 500),
+    lookerNotes: lookerData.notes || '',
+    gmv: lookerData.gmv, gmvDelta: lookerData.gmvDelta,
+    tx: lookerData.tx, txDelta: lookerData.txDelta,
+    avg: lookerData.avg, ticketDelta: lookerData.avgDelta
+  };
+  return btoa(encodeURIComponent(JSON.stringify(data)));
 }
 
 const MSGS = ['Pulling account data...','Reading transaction history...','Scanning support tickets...','Checking Slack mentions...','Generating AI brief...'];
@@ -840,6 +945,62 @@ TONE & APPROACH:
 Rules: Be specific and use the data. No invented details. One to two lines per point.`;
 }
 
+// Encode brief to URL hash for shareable links
+function encodeBriefToURL(merchant, am, aiContent, slackContent, notionContent) {
+  const data = {
+    m: merchant,
+    a: am,
+    ai: aiContent,
+    sl: slackContent,
+    no: notionContent,
+    t: new Date().toISOString()
+  };
+  try {
+    const json = JSON.stringify(data);
+    const encoded = btoa(unescape(encodeURIComponent(json)));
+    window.history.replaceState(null, '', '#brief=' + encoded);
+    return encoded;
+  } catch(e) {
+    return null;
+  }
+}
+
+// Decode brief from URL hash and render it
+function loadBriefFromURL() {
+  const hash = window.location.hash;
+  if (!hash.startsWith('#brief=')) return false;
+  try {
+    const encoded = hash.replace('#brief=', '');
+    const json = decodeURIComponent(escape(atob(encoded)));
+    const data = JSON.parse(json);
+
+    // Populate mock data sections
+    const d = getMockData(data.m);
+    populate(data.m, data.a, d);
+
+    // Populate live sections
+    document.getElementById('slackContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${escapeHtml(data.sl || 'No Slack data')}</p>`;
+    document.getElementById('notionContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${escapeHtml(data.no || 'No Notion data')}</p>`;
+
+    // Populate AI content
+    document.getElementById('aiContent').textContent = data.ai || '';
+
+    // Set header
+    const generated = data.t ? new Date(data.t).toLocaleString('en-ZA') : 'Unknown';
+    document.getElementById('briefTitle').textContent = data.m;
+    document.getElementById('briefMeta').textContent = `Generated ${generated} · AM: ${data.a}`;
+
+    // Show brief
+    document.getElementById('briefOutput').style.display = 'block';
+    document.getElementById('loading').style.display = 'none';
+
+    return true;
+  } catch(e) {
+    console.log('Could not load brief from URL:', e.message);
+    return false;
+  }
+}
+
 function setDot(id, state, errorMsg) {
   const d = document.getElementById(id);
   if (!d) return;
@@ -975,7 +1136,13 @@ async function generateBrief() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('briefOutput').style.display = 'block';
 
-    // Send Slack DM notification to AM
+    // Encode brief to URL so Slack notification link reopens it
+    const aiText = document.getElementById('aiContent').textContent;
+    const slackText = document.getElementById('slackContent').textContent;
+    const notionText = document.getElementById('notionContent').textContent;
+    encodeBriefToURL(merchant, am, aiText, slackText, notionText);
+
+    // Send Slack DM notification with the encoded URL
     sendSlackNotification(am, merchant);
 
   } catch(err) {
@@ -1251,7 +1418,7 @@ After creating successfully respond with exactly: PAGE_CREATED followed by the p
   }
 }
 
-async function sendSlackNotification(amName, merchant) {
+async function sendSlackNotification(amName, merchant, briefUrl) {
   try {
     const res = await fetch('/api/slack-notify', {
       method: 'POST',
@@ -1259,7 +1426,7 @@ async function sendSlackNotification(amName, merchant) {
       body: JSON.stringify({
         amName,
         merchant,
-        briefUrl: window.location.href
+        briefUrl: briefUrl || window.location.href
       })
     });
     if (res.ok) {
@@ -1286,9 +1453,15 @@ function copyBrief() {
   });
 }
 
+// Auto-load brief from URL hash on page load
+window.addEventListener('load', () => {
+  loadBriefFromURL();
+});
+
 function resetForm() {
   document.getElementById('merchantName').value = '';
   document.getElementById('briefOutput').style.display = 'none';
+  window.history.replaceState(null, '', window.location.pathname);
   document.getElementById('postNotes').value = '';
   document.getElementById('postSummaryOut').style.display = 'none';
   document.getElementById('postStatus').textContent = '';
