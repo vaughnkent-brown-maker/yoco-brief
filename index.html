@@ -106,6 +106,37 @@
   .timeline-line { display: flex; flex-direction: column; align-items: center; margin-right: 10px; }
   .tl-dot { width: 8px; height: 8px; border-radius: 50%; background: #0066FF; flex-shrink: 0; }
   .tl-line { width: 1px; background: #E5E4E0; flex: 1; min-height: 16px; margin-top: 2px; }
+  .source-pill { position: relative; cursor: default; }
+  .source-pill .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    max-width: 260px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .source-pill .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1a1a1a;
+  }
+  .source-pill:hover .tooltip { display: block; }
+
   @media (max-width: 640px) {
     .form-row { grid-template-columns: 1fr; }
     .data-sources { grid-template-columns: 1fr 1fr; }
@@ -809,12 +840,21 @@ TONE & APPROACH:
 Rules: Be specific and use the data. No invented details. One to two lines per point.`;
 }
 
-function setDot(id, state) {
+function setDot(id, state, errorMsg) {
   const d = document.getElementById(id);
   if (!d) return;
   d.className = 'source-dot' + (state ? ' ' + state : '');
   if (state === 'loading') { d.style.animation = 'pulse 1s infinite'; }
   else { d.style.animation = ''; }
+  // Update tooltip on error
+  const source = id.replace('dot-', '');
+  const tip = document.getElementById('tip-' + source);
+  if (tip && state === 'mock' && errorMsg) {
+    tip.textContent = '⚠️ ' + errorMsg;
+    tip.style.background = '#B91C1C';
+  } else if (tip && state === 'active') {
+    tip.style.background = '#166534';
+  }
 }
 
 function escapeHtml(str) {
@@ -854,10 +894,11 @@ async function fetchSlackData(merchant) {
     document.getElementById('slack-status').textContent = 'Live';
     return data.summary || 'No Slack mentions found.';
   } catch(err) {
-    setDot('dot-slack', 'mock');
+    const errMsg = err.message || 'Slack search failed';
+    setDot('dot-slack', 'mock', errMsg);
     document.getElementById('slack-status').textContent = 'Error';
     const d = getMockData(merchant);
-    return '[Live search unavailable] ' + d.slack.mentions.map(m => m.date + ' · ' + m.channel + ': ' + m.text).join('\n\n');
+    return '[Live search unavailable — ' + errMsg + '] ' + d.slack.mentions.map(m => m.date + ' · ' + m.channel + ': ' + m.text).join('\n\n');
   }
 }
 
