@@ -8,6 +8,9 @@
     },
     "api/slack-notify.js": {
       "maxDuration": 30
+    },
+    "api/notion-search.js": {
+      "maxDuration": 30
     }
   }
 }

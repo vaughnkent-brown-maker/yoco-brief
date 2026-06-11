@@ -52,6 +52,7 @@
   .d-sf { background: #00A1E0; } .d-ic { background: #6B3FA0; } .d-lk { background: #FF6B35; }
   .d-ai { background: #0066FF; } .d-slack { background: #4A154B; } .d-notion { background: #1a1a1a; }
   .d-post { background: #16A34A; }
+  .d-releases { background: #7C3AED; }
   .mock-badge { font-size: 10px; background: #FEF3C7; color: #B45309; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 4px; }
   .sc { font-size: 14px; line-height: 1.65; color: #1a1a1a; }
   .sc ul { padding-left: 1.2rem; }
@@ -149,7 +150,14 @@
 <body>
 
 <div class="header">
-  <div class="logo">YOCO</div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72" style="height:26px;display:block">
+  <text x="4" y="62" 
+    font-family="Montserrat, Arial Black, sans-serif" 
+    font-weight="900" 
+    font-size="72" 
+    fill="white" 
+    letter-spacing="-1">YOCO</text>
+</svg>
   <div class="badge">AM Brief Generator</div><div style="font-size:11px;background:rgba(66,133,244,0.2);color:#8AB4F8;padding:3px 10px;border-radius:20px;font-weight:500">Gemini 3.5 Flash</div>
 </div>
 
@@ -196,8 +204,8 @@
           All linked sub-accounts &amp; locations
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#1a1a1a">
-          <input type="checkbox" id="consolidateGMV" checked style="accent-color:#0066FF;width:14px;height:14px">
-          Consolidated GMV across all locations
+          <input type="checkbox" id="consolidateTPV" checked style="accent-color:#0066FF;width:14px;height:14px">
+          Consolidated TPV across all locations
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:#1a1a1a">
           <input type="checkbox" id="groupAIContext" checked style="accent-color:#0066FF;width:14px;height:14px">
@@ -271,13 +279,13 @@
       <div class="brief-section">
         <div class="section-label"><span class="sdot d-lk"></span>Transaction trends <span class="mock-badge">Mock</span></div>
         <div class="metric-row">
-          <div class="metric"><div class="metric-label">GMV this month</div><div class="metric-value" id="gmv">—</div><div class="metric-delta" id="gmvDelta"></div></div>
+          <div class="metric"><div class="metric-label">TPV this month</div><div class="metric-value" id="tpv">—</div><div class="metric-delta" id="tpvDelta"></div></div>
           <div class="metric"><div class="metric-label">Transactions</div><div class="metric-value" id="txCount">—</div><div class="metric-delta" id="txDelta"></div></div>
-          <div class="metric"><div class="metric-label">Avg ticket</div><div class="metric-value" id="avgTicket">—</div><div class="metric-delta" id="ticketDelta"></div></div>
-          <div class="metric"><div class="metric-label">Lifetime GMV</div><div class="metric-value" id="lifetimeGmv">—</div><div class="metric-delta up" id="lifetimeSince"></div></div>
+          <div class="metric"><div class="metric-label">Avg basket size</div><div class="metric-value" id="avgBasket">—</div><div class="metric-delta" id="basketDelta"></div></div>
+          <div class="metric"><div class="metric-label">Lifetime TPV</div><div class="metric-value" id="lifetimeGmv">—</div><div class="metric-delta up" id="lifetimeSince"></div></div>
         </div>
         <div class="chart-row">
-          <div class="chart-box"><div class="chart-title">GMV — last 6 months (R)</div><div class="chart-container"><canvas id="gmvChart"></canvas></div></div>
+          <div class="chart-box"><div class="chart-title">TPV — last 6 months (R)</div><div class="chart-container"><canvas id="tpvChart"></canvas></div></div>
           <div class="chart-box"><div class="chart-title">Transaction volume — last 6 months</div><div class="chart-container"><canvas id="txChart"></canvas></div></div>
         </div>
         <div class="sc muted" id="lookerNotes" style="margin-top:12px"></div>
@@ -293,6 +301,12 @@
       <div class="brief-section" id="groupSection" style="display:none;background:#F0F7FF">
         <div class="section-label"><span class="sdot" style="background:#1D4ED8"></span>Group account structure <span style="font-size:10px;background:#BFDBFE;color:#1D4ED8;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px">Live from Salesforce</span></div>
         <div class="sc" id="groupContent"></div>
+      </div>
+
+      <!-- MULTI-LOCATION -->
+      <div class="brief-section" id="multiLocationSection">
+        <div class="section-label"><span class="sdot d-sf"></span>Multi-location status <span class="mock-badge">Mock · Salesforce</span></div>
+        <div class="sc" id="multiLocationContent"></div>
       </div>
 
       <!-- COMMERCIAL & PRODUCTS -->
@@ -317,6 +331,12 @@
       <div class="brief-section">
         <div class="section-label"><span class="sdot d-notion"></span>Notion — briefing history <span id="notionBadge" style="font-size:10px;background:#EEF3FF;color:#1D4ED8;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px">Live</span></div>
         <div class="sc" id="notionContent"></div>
+      </div>
+
+      <!-- UPCOMING RELEASES -->
+      <div class="brief-section" id="releasesSection" style="display:none">
+        <div class="section-label"><span class="sdot d-releases"></span>Upcoming releases — relevant to this merchant <span style="font-size:10px;background:#EDE9FE;color:#7C3AED;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px">Live from Notion</span></div>
+        <div class="sc" id="releasesContent"></div>
       </div>
 
       <!-- AI SYNTHESIS -->
@@ -365,7 +385,7 @@ function getGroupMockData(merchant) {
       phone: '+27 82 441 7823',
       location: 'Kramerville, Johannesburg',
       onboarded: '2022-03-01',
-      lifetimeGMV: 'R2.4M',
+      lifetimeTPV: 'R2.4M',
       tier: 'Key Account',
       health: 85,
       nps: 7,
@@ -377,7 +397,7 @@ function getGroupMockData(merchant) {
       {
         name: merchant + ' — Kramerville',
         accountId: 'SF-001-0441', status: 'Active', gmv: 'R38,200', gmvDelta: '+9.2%',
-        tx: '694', txDelta: '+7.1%', avgTicket: 'R55.04',
+        tx: '694', txDelta: '+7.1%', avgBasket: 'R55.04',
         location: 'Kramerville, JHB', terminals: 2, plan: 'Pro Plan',
         onboarded: '2022-03-01', manager: 'Sipho Ndlovu',
         openTickets: 1, csat: 4.3,
@@ -387,7 +407,7 @@ function getGroupMockData(merchant) {
       {
         name: merchant + ' — Rosebank',
         accountId: 'SF-001-0442', status: 'Active', gmv: 'R30,200', gmvDelta: '+15.4%',
-        tx: '546', txDelta: '+10.8%', avgTicket: 'R55.30',
+        tx: '546', txDelta: '+10.8%', avgBasket: 'R55.30',
         location: 'Rosebank, JHB', terminals: 1, plan: 'Starter Plan',
         onboarded: '2023-11-15', manager: 'Anika Botha',
         openTickets: 1, csat: 4.1,
@@ -396,8 +416,8 @@ function getGroupMockData(merchant) {
       },
       {
         name: merchant + ' — Sandton',
-        accountId: 'SF-001-0443', status: 'Pending', gmv: 'R0', gmvDelta: '—',
-        tx: '0', txDelta: '—', avgTicket: '—',
+        accountId: 'SF-001-0443', status: 'Pending', tpv: 'R0', tpvDelta: '—',
+        tx: '0', txDelta: '—', avgBasket: '—',
         location: 'Sandton City, JHB', terminals: 0, plan: 'Pro Plan (proposed)',
         onboarded: 'Aug 2026 (est.)', manager: 'TBC',
         openTickets: 0, csat: null,
@@ -406,8 +426,8 @@ function getGroupMockData(merchant) {
       },
       {
         name: merchant + ' — Melrose Arch',
-        accountId: 'SF-001-0444', status: 'Pending', gmv: 'R0', gmvDelta: '—',
-        tx: '0', txDelta: '—', avgTicket: '—',
+        accountId: 'SF-001-0444', status: 'Pending', tpv: 'R0', tpvDelta: '—',
+        tx: '0', txDelta: '—', avgBasket: '—',
         location: 'Melrose Arch, JHB', terminals: 0, plan: 'Pro Plan (proposed)',
         onboarded: 'Aug 2026 (est.)', manager: 'TBC',
         openTickets: 0, csat: null,
@@ -416,13 +436,13 @@ function getGroupMockData(merchant) {
       }
     ],
     consolidated: {
-      totalGMV: 'R68,400', totalGMVDelta: '+11.8%',
+      totalTPV: 'R68,400', totalTPVDelta: '+11.8%',
       totalTx: '1,240', totalTxDelta: '+8.3%',
       activeLocations: 2, pendingLocations: 2,
       totalTerminals: 3, terminalsOnOrder: 3,
-      avgGMVPerLocation: 'R34,200',
+      avgTPVPerLocation: 'R34,200',
       totalOpenTickets: 2,
-      totalLifetimeGMV: 'R2.4M',
+      totalLifetimeTPV: 'R2.4M',
       groupRevenuePotential: 'R136,800/mo (at full 4-location run rate)',
       groupPlanOpportunity: 'All 4 locations on Pro Plan = R4,800/mo recurring',
       capitalExposure: 'R80,000 pre-approved across group'
@@ -470,12 +490,12 @@ function restoreBrief(data) {
 
   // Restore metrics
   if (gmv) {
-    document.getElementById('gmv').textContent = gmv;
-    document.getElementById('gmvDelta').innerHTML = `<span class="up">${gmvDelta}</span>`;
+    document.getElementById('tpv').textContent = gmv;
+    document.getElementById('tpvDelta').innerHTML = `<span class="up">${gmvDelta}</span>`;
     document.getElementById('txCount').textContent = tx;
     document.getElementById('txDelta').innerHTML = `<span class="up">${txDelta}</span>`;
-    document.getElementById('avgTicket').textContent = avg;
-    document.getElementById('ticketDelta').innerHTML = `<span class="up">${ticketDelta}</span>`;
+    document.getElementById('avgBasket').textContent = avg;
+    document.getElementById('basketDelta').innerHTML = `<span class="up">${ticketDelta}</span>`;
     document.getElementById('lookerNotes').textContent = lookerNotes;
   }
 
@@ -534,7 +554,7 @@ function encodeBriefToUrl(merchant, am, meta, aiContent, slackContent, notionCon
     slackContent: (slackContent || '').slice(0, 1000),
     notionContent: (notionContent || '').slice(0, 500),
     lookerNotes: lookerData.notes || '',
-    gmv: lookerData.gmv, gmvDelta: lookerData.gmvDelta,
+    gmv: lookerData.tpv || lookerData.gmv, gmvDelta: lookerData.tpvDelta || lookerData.gmvDelta,
     tx: lookerData.tx, txDelta: lookerData.txDelta,
     avg: lookerData.avg, ticketDelta: lookerData.avgDelta
   };
@@ -542,7 +562,7 @@ function encodeBriefToUrl(merchant, am, meta, aiContent, slackContent, notionCon
 }
 
 const MSGS = ['Pulling account data...','Reading transaction history...','Scanning support tickets...','Checking Slack mentions...','Generating AI brief...'];
-let gmvChartInst = null, txChartInst = null;
+let tpvChartInst = null, txChartInst = null;
 
 function getMockData(merchant) {
   const n = merchant || 'this merchant';
@@ -562,13 +582,53 @@ function getMockData(merchant) {
         { name: 'Send Pro Plan contract', due: 'Jun 14', priority: 'Medium' },
         { name: 'Check terminal delivery ETA', due: 'Jun 20', priority: 'Low' }
       ],
-      onboarded: '2023-08-12', lifetimeGMV: 'R2.4M', nps: 7,
+      onboarded: '2023-08-12', lifetimeTPV: 'R2.4M', nps: 7,
       accountOwner: 'Vaughn Kent-Brown', region: 'Gauteng',
       industry: 'Coffee & Hospitality', employees: '25–50',
       contacts: [
         { name: 'Emma Joubert', role: 'Owner / Decision Maker', email: 'emma@strangers.co.za' },
         { name: 'Liam Abrahams', role: 'Operations Manager', email: 'liam@strangers.co.za' }
-      ]
+      ],
+      multiLocation: {
+        enabled: true,
+        locationCount: 2,
+        plan: 'Starter Plan',
+        maxLocations: 2,
+        eligibleForUnlimited: true,
+        notes: 'Currently capped at 2 locations on Starter Plan. Plus/Pro unlocks unlimited locations.',
+        locations: [
+          {
+            name: 'Sea Point',
+            manager: 'Jamie Hendricks',
+            status: 'Active',
+            tpv: 'R38,200',
+            tpvDelta: '+9.2%',
+            transactions: 694,
+            avgBasket: 'R55.04',
+            terminals: 2,
+            products: ['Yoco Card Machine Neo x2', 'Yoco App'],
+            plan: 'Starter Plan',
+            onboarded: '2022-03-01',
+            openTickets: 1,
+            notes: 'Primary flagship location. Highest foot traffic. App reporting bug open.'
+          },
+          {
+            name: 'Blouberg',
+            manager: 'Taryn Adonis',
+            status: 'Active',
+            tpv: 'R30,200',
+            tpvDelta: '+15.4%',
+            transactions: 546,
+            avgBasket: 'R55.30',
+            terminals: 1,
+            products: ['Yoco Card Machine Neo x1', 'Yoco Gateway - Shopify'],
+            plan: 'Starter Plan',
+            onboarded: '2023-11-15',
+            openTickets: 1,
+            notes: 'Faster growth than Sea Point. Single terminal - under capacity at peak times. Strong upsell case.'
+          }
+        ]
+      }
     },
     commercial: {
       tpv: 'R68,400 / month', billingPackage: 'Starter Plan (upgrade opportunity)',
@@ -592,10 +652,10 @@ function getMockData(merchant) {
       sentiment: 'Neutral trending negative — Emma is frustrated with the reporting bug duration. Positive about expansion plans and AM responsiveness.'
     },
     looker: {
-      gmv: 'R68,400', gmvDelta: '+11.8%', tx: '1,240', txDelta: '+8.3%', avg: 'R55.16', avgDelta: '+3.2%',
-      lifetimeGMV: 'R2.4M', onboardedYear: '2023',
-      trend: 'Consistent 3-month upward trajectory. Weekend volume accounts for 62% of weekly GMV. Rosebank location showing faster growth than Kramerville. Average basket size up 3.2% indicating higher-value transactions.',
-      gmvHistory: [41200, 45800, 52300, 58900, 61200, 68400],
+      tpv: 'R68,400', tpvDelta: '+11.8%', tx: '1,240', txDelta: '+8.3%', avg: 'R55.16', avgDelta: '+3.2%',
+      lifetimeTPV: 'R2.4M', onboardedYear: '2023',
+      trend: 'Consistent 3-month upward trajectory. Weekend volume accounts for 62% of weekly TPV. Rosebank location showing faster growth than Kramerville. Average basket size up 3.2% indicating higher-value transactions.',
+      tpvHistory: [41200, 45800, 52300, 58900, 61200, 68400],
       txHistory: [820, 890, 980, 1090, 1145, 1240],
       months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
     },
@@ -618,7 +678,7 @@ function getMockData(merchant) {
 }
 
 function renderCharts(lk) {
-  if (gmvChartInst) gmvChartInst.destroy();
+  if (tpvChartInst) tpvChartInst.destroy();
   if (txChartInst) txChartInst.destroy();
   const chartDefaults = {
     responsive: true, maintainAspectRatio: false,
@@ -628,11 +688,11 @@ function renderCharts(lk) {
       y: { grid: { color: '#F0EFE9' }, ticks: { font: { size: 10 }, color: '#999' } }
     }
   };
-  gmvChartInst = new Chart(document.getElementById('gmvChart'), {
+  tpvChartInst = new Chart(document.getElementById('tpvChart'), {
     type: 'bar',
     data: {
       labels: lk.months,
-      datasets: [{ data: lk.gmvHistory, backgroundColor: lk.gmvHistory.map((v,i) => i === lk.gmvHistory.length-1 ? '#0066FF' : '#C7D9FF'), borderRadius: 4 }]
+      datasets: [{ data: lk.tpvHistory, backgroundColor: lk.tpvHistory.map((v,i) => i === lk.tpvHistory.length-1 ? '#0066FF' : '#C7D9FF'), borderRadius: 4 }]
     },
     options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => 'R' + (v/1000).toFixed(0) + 'k' } } } }
   });
@@ -649,13 +709,13 @@ function renderCharts(lk) {
 function populate(merchant, am, d) {
   const lk = d.looker, sf = d.salesforce, ic = d.intercom, cm = d.commercial, pr = d.products;
 
-  document.getElementById('gmv').textContent = lk.gmv;
-  document.getElementById('gmvDelta').innerHTML = `<span class="up">${lk.gmvDelta} vs last month</span>`;
+  document.getElementById('tpv').textContent = lk.tpv || lk.gmv;
+  document.getElementById('tpvDelta').innerHTML = `<span class="up">${lk.tpvDelta || lk.gmvDelta || ''} vs last month</span>`;
   document.getElementById('txCount').textContent = lk.tx;
   document.getElementById('txDelta').innerHTML = `<span class="up">${lk.txDelta} vs last month</span>`;
-  document.getElementById('avgTicket').textContent = lk.avg;
-  document.getElementById('ticketDelta').innerHTML = `<span class="up">${lk.avgDelta} vs last month</span>`;
-  document.getElementById('lifetimeGmv').textContent = lk.lifetimeGMV;
+  document.getElementById('avgBasket').textContent = lk.avg || '—';
+  document.getElementById('basketDelta').innerHTML = `<span class="up">${lk.avgDelta || ''} vs last month</span>`;
+  document.getElementById('lifetimeGmv').textContent = lk.lifetimeTPV;
   document.getElementById('lifetimeSince').textContent = `Since ${lk.onboardedYear}`;
   document.getElementById('lookerNotes').textContent = lk.trend;
   renderCharts(lk);
@@ -806,7 +866,7 @@ function populateGroup(merchant, gd) {
     <div style="margin-bottom:16px">
       <div class="col-label" style="margin-bottom:10px">Consolidated performance — all locations</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
-        <div class="metric"><div class="metric-label">Total GMV</div><div class="metric-value">${con.totalGMV}</div><div class="metric-delta up">${con.totalGMVDelta}</div></div>
+        <div class="metric"><div class="metric-label">Total TPV</div><div class="metric-value">${con.totalTPV}</div><div class="metric-delta up">${con.totalTPVDelta}</div></div>
         <div class="metric"><div class="metric-label">Transactions</div><div class="metric-value">${con.totalTx}</div><div class="metric-delta up">${con.totalTxDelta}</div></div>
         <div class="metric"><div class="metric-label">Active locations</div><div class="metric-value">${con.activeLocations}</div><div style="font-size:11px;color:#F59E0B;font-weight:500">${con.pendingLocations} pending</div></div>
         <div class="metric"><div class="metric-label">Terminals</div><div class="metric-value">${con.totalTerminals}</div><div style="font-size:11px;color:#888">${con.terminalsOnOrder} on order</div></div>
@@ -828,7 +888,7 @@ function populateGroup(merchant, gd) {
       <div class="col-label" style="margin-bottom:10px">Sub-accounts & locations</div>
       <div style="border:1px solid #E5E4E0;border-radius:10px;overflow:hidden">
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;background:#F7F6F3;padding:8px 14px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;gap:8px">
-          <div>Account</div><div>GMV</div><div>Transactions</div><div>Plan</div><div>Status</div>
+          <div>Account</div><div>TPV</div><div>Transactions</div><div>Plan</div><div>Status</div>
         </div>
         ${sub.map((s,i) => `
           <div style="border-top:1px solid #F0EFE9;padding:12px 14px;background:${i%2===0?'#fff':'#FAFAF8'}">
@@ -894,7 +954,7 @@ function populateGroup(merchant, gd) {
         </div>`).join('')}
     </div>
 
-    <p style="font-size:12px;color:#888;margin-top:12px;padding-top:10px;border-top:1px solid #E5E4E0">&#9432; When Salesforce is connected, this pulls live parent/child account hierarchy, real GMV per location, and all linked opportunities automatically.</p>
+    <p style="font-size:12px;color:#888;margin-top:12px;padding-top:10px;border-top:1px solid #E5E4E0">&#9432; When Salesforce is connected, this pulls live parent/child account hierarchy, real TPV per location, and all linked opportunities automatically.</p>
   `;
 }
 
@@ -909,7 +969,7 @@ OPPORTUNITIES: ${sf.opportunities.map(o=>o.name+' '+o.value+' ('+o.stage+')').jo
 OPEN TASKS: ${sf.tasks.map(t=>t.name+' — '+t.priority+' priority, due '+t.due).join('; ')}.
 COMMERCIAL: TPV ${d.commercial.tpv}. Package: ${d.commercial.billingPackage}. Rates: debit ${d.commercial.rates.debit}, credit ${d.commercial.rates.credit}.
 PRODUCTS: ${d.products.active.join('; ')}. Integrations: ${d.products.integrations.join(', ')}.
-TRANSACTION TREND: GMV ${lk.gmv} (${lk.gmvDelta}), ${lk.tx} transactions (${lk.txDelta}). ${lk.trend}
+TRANSACTION TREND: TPV ${lk.tpv} (${lk.tpvDelta}), ${lk.tx} transactions (${lk.txDelta}). ${lk.trend}
 SUPPORT: ${ic.openTickets} open tickets, CSAT ${ic.csat}/5. ${ic.sentiment}
 OPEN ISSUES: ${ic.issues.filter(t=>t.status==='Open').map(t=>t.title).join('; ')}.
 SLACK INTEL: ${slackData || 'No Slack data available'}
@@ -1064,12 +1124,140 @@ async function fetchSlackData(merchant) {
 }
 
 async function fetchNotionData(merchant) {
-  // Notion MCP only available via Claude.ai — returns mock in standalone mode
+  // Notion not yet connected on Vercel — returning mock data
   setDot('dot-notion', 'mock');
   document.getElementById('notion-status').textContent = 'Mock';
   const d = getMockData(merchant);
   return d.notion.briefs.map(b => b.date + ': ' + b.summary).join('\n\n');
 }
+
+// Roadmap & Releases data — pulled from Notion Roadmap & Releases database
+const RELEASES_DATA = [{"name": "Plans 2.0", "stage": "Live to All", "date": "2026-06-01", "tier": "Tier 1", "confidence": "Released", "segments": ["all"], "summary": "New 3-tier structure: Core (entry), Plus (R249/mo), Pro (formerly Accelerate). Unlimited locations on Plus & Pro. Tiered transaction rates improving with plan and TPV. 30-day free trial on Plus & Pro.", "talking_point": "Great upgrade conversation - merchants on Core can unlock lower fees and unlimited locations by moving to Plus or Pro. 30-day free trial removes the risk.", "url": "https://app.notion.com/p/35aba43eb13580349fb5c0e71d37fba1"}, {"name": "Loyalty", "stage": "Live to All", "date": "2026-06-15", "tier": "Tier 3", "confidence": "High", "segments": ["F&B", "Retail", "Hospitality", "Coffee", "Restaurant", "QSR"], "summary": "Merchants can reward repeat customers directly through Yoco. Available behind Plus/Pro plans. Phased release.", "talking_point": "Perfect for F&B and retail merchants wanting to drive repeat visits. Requires Plus or Pro - natural upsell hook.", "url": "https://app.notion.com/p/358ba43eb1358001b979d553a551e474"}, {"name": "Tables", "stage": "Live to All", "date": "2026-06-15", "tier": "Tier 2", "confidence": "Medium", "segments": ["F&B", "Restaurant", "Hospitality", "Dine-in", "QSR"], "summary": "Table management including table assignment, guest count, staff ownership, and table movement. Improves FOH/BOH coordination. Available as a paid feature.", "talking_point": "Big win for sit-down restaurants - staff manage tables digitally, reducing errors and improving service flow. Pairs with Selling Modes (Dine-in mode).", "url": "https://app.notion.com/p/35dba43eb135801885d7c2f3b174951a"}, {"name": "Selling Modes", "stage": "Live to All", "date": "2026-06-15", "tier": "Tier 2", "confidence": "Medium", "segments": ["all"], "summary": "Merchants customise POS per business type - Dine-in, Quick Order, Appointments, Shop, or Standard mode. Adjusts Counter/POS interface to surface relevant features.", "talking_point": "Makes Yoco POS feel purpose-built for their business. F&B gets Dine-in with Tables, H&B gets Appointments mode. Simple to switch.", "url": "https://app.notion.com/p/36fba43eb13580df93f4e6a41d85f75a"}, {"name": "Orders", "stage": "Live to All", "date": "2026-06-15", "tier": "Tier 2", "confidence": "Medium", "segments": ["F&B", "Restaurant", "QSR", "Hospitality", "Takeaway"], "summary": "New Orders tab with order type context (takeaway/sit-down) and improved visibility across Counter and Handheld. Improves FOH/BOH coordination.", "talking_point": "For F&B merchants managing multiple order types - much cleaner visibility across the floor. Especially useful for merchants with both takeaway and dine-in.", "url": "https://app.notion.com/p/358ba43eb13580e0b909c4565787f167"}, {"name": "Order Number Reset Every Day", "stage": "Live to All", "date": "2026-06-15", "tier": "Tier 2", "confidence": "Medium", "segments": ["F&B", "Restaurant", "QSR", "Retail"], "summary": "Merchants can reset order numbers to one at the end of each day.", "talking_point": "Small but meaningful for busy merchants - order numbers reset daily so staff always know how busy a day has been at a glance.", "url": "https://app.notion.com/p/0c1bf96fd7d6417fbf05e67102cfabd2"}, {"name": "Order Types", "stage": "Live to All", "date": "2026-06-15", "tier": "Tier 2", "confidence": "Medium", "segments": ["F&B", "Restaurant", "QSR", "Takeaway", "Hospitality"], "summary": "Enable Takeaway or Sit-down order types in the Manage Tab. F&B Mode merchants get this automatically. Active Order Slip printer merchants get it switched on automatically.", "talking_point": "Gives F&B merchants clear separation between takeaway and dine-in orders - reduces confusion at the counter and improves kitchen coordination.", "url": "https://app.notion.com/p/0c1bf96fd7d6417fbf05e67102cfabd2"}, {"name": "Item Level Refunds", "stage": "Live to All", "date": "2026-06-17", "tier": "Tier 2", "confidence": "Medium", "segments": ["Retail", "F&B", "Wholesale", "all"], "summary": "Select specific products to refund rather than voiding full transactions. Refunded products automatically replenish stock levels.", "talking_point": "Closes a key gap for retail merchants - refund individual items without voiding the whole transaction. Stock levels auto-update.", "url": "https://app.notion.com/p/33bba43eb13580daaabcd2cc08e6dacf"}, {"name": "Health & Beauty POS", "stage": "Live to All", "date": "2026-06-17", "tier": "Tier 1", "confidence": "Medium", "segments": ["Health & Beauty", "Salon", "Spa", "Wellness", "Appointments"], "summary": "Full H&B POS through Appointments Mode. Services on all plans, appointments on Plus in H&B Mode.", "talking_point": "Yoco is now purpose-built for salons and spas. Appointments, services, and payments in one place. Requires Plus for appointments.", "url": "https://app.notion.com/p/358ba43eb13580e0b909c4565787f167"}, {"name": "Yoco Savings", "stage": "Live to All", "date": "2026-05-29", "tier": "Tier 1", "confidence": "Released", "segments": ["all"], "summary": "Earn interest on business funds held with Yoco. Now available to all merchants.", "talking_point": "Strong cashflow conversation - merchants earn on idle business funds. Especially relevant when discussing Yoco Capital.", "url": "https://app.notion.com/p/359ba43eb13580cabd18d84ea4d2f057"}, {"name": "Yoco App UX/UI Update", "stage": "Live to All", "date": "2026-06-07", "tier": "Tier 1", "confidence": "Released", "segments": ["all"], "summary": "Major update to the selling experience in the Yoco App - improved UI and UX across the POS flow.", "talking_point": "Good news for merchants who have flagged app frustrations - significant UX improvements have landed. Use to reset expectations positively.", "url": "https://app.notion.com/p/366ba43eb135801cba09dd25f5a2b147"}, {"name": "Barcode Scanning", "stage": "Live to All", "date": "2026-06-07", "tier": "Tier 2", "confidence": "Released", "segments": ["Retail", "Wholesale", "Grocery", "FMCG"], "summary": "Barcode scanning in the Yoco app for faster product lookup and checkout.", "talking_point": "Game changer for retail merchants with large catalogues - speeds up checkout significantly. Worth demoing if they have a large product range.", "url": "https://app.notion.com/p/29cba43eb135801e9bc6e30d9fd06b3a"}, {"name": "Voids & Discounts Controls", "stage": "Live to All", "date": "2026-06-08", "tier": "Tier 2", "confidence": "Released", "segments": ["all"], "summary": "Improved control over who can apply voids and discounts, plus better reporting on these actions.", "talking_point": "Relevant for merchants with staff - managers can now control and audit who is voiding and discounting, reducing shrinkage risk.", "url": "https://app.notion.com/p/364ba43eb135800fae0ed1fe343e61d9"}, {"name": "Rates Decrease for Core Plan", "stage": "Live to All", "date": "2026-06-07", "tier": "Tier 2", "confidence": "Released", "segments": ["all"], "summary": "Transaction rate reduction for merchants on the Core plan.", "talking_point": "Good news story for Core plan merchants - their rates have come down. Reinforce Yoco value and use as a retention conversation.", "url": "https://app.notion.com/p/33eba43eb1358048b4d5d66e67fa75c1"}, {"name": "Yoco Connect Slice 2", "stage": "Beta", "date": "2026-06-07", "tier": "Tier 2", "confidence": "High", "segments": ["eCommerce", "Online", "Shopify", "WooCommerce", "Multi-channel"], "summary": "Second phase of Yoco Connect - improved integrations with third-party platforms.", "talking_point": "For merchants using Shopify or other eCommerce platforms alongside in-store Yoco - better connectivity between online and offline.", "url": "https://app.notion.com/p/34bba43eb13580d4994efc70fab9e60a"}];
+
+function getRelevantReleases(merchantData) {
+  const segment = (merchantData.salesforce.segment || '').toLowerCase();
+  const notes = (merchantData.looker.trend || '').toLowerCase();
+  const intercomIssues = (merchantData.intercom.issues || []).map(i => (i.title || '').toLowerCase()).join(' ');
+  const allContext = segment + ' ' + notes + ' ' + intercomIssues;
+
+  return RELEASES_DATA.filter(r => {
+    if (r.segments.includes('all')) return true;
+    return r.segments.some(s => allContext.includes(s.toLowerCase()));
+  });
+}
+
+function populateReleases(relevant) {
+  const section = document.getElementById('releasesSection');
+  const content = document.getElementById('releasesContent');
+
+  if (!relevant || relevant.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+
+  // Prioritise — max 3 most relevant, sorted by tier then date
+  const tierOrder = { 'Tier 1': 0, 'Tier 2': 1, 'Tier 3': 2 };
+  const top = relevant
+    .sort((a, b) => (tierOrder[a.tier] || 2) - (tierOrder[b.tier] || 2))
+    .slice(0, 3);
+
+  const others = relevant.slice(3);
+
+  const stageColor = { 'Live to All': '#16A34A', 'Beta': '#D97706', 'Alpha': '#6B7280' };
+  const stageBg = { 'Live to All': '#DCFCE7', 'Beta': '#FEF3C7', 'Alpha': '#F3F4F6' };
+
+  const topHtml = top.map(r => `
+    <div style="border:1px solid #EDE9FE;border-radius:9px;padding:12px 14px;margin-bottom:8px;background:#FAFAFE">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
+        <p style="font-weight:700;font-size:13px;color:#1a1a1a">${r.name}</p>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:${stageBg[r.stage]||'#F3F4F6'};color:${stageColor[r.stage]||'#666'}">${r.stage}</span>
+          <span style="font-size:10px;color:#aaa">${r.date}</span>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#666;margin-bottom:6px;line-height:1.5">${r.summary}</p>
+      <p style="font-size:12px;color:#5B21B6;line-height:1.5"><strong>💬</strong> ${r.talking_point}</p>
+    </div>`).join('');
+
+  const othersHtml = others.length > 0 ? `
+    <details style="margin-top:4px">
+      <summary style="font-size:12px;color:#888;cursor:pointer;padding:6px 0">+${others.length} more relevant releases</summary>
+      <div style="margin-top:8px">
+        ${others.map(r => `
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #F0EFE9">
+            <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:${stageBg[r.stage]||'#F3F4F6'};color:${stageColor[r.stage]||'#666'};flex-shrink:0;margin-top:1px">${r.stage}</span>
+            <div>
+              <p style="font-size:13px;font-weight:600;color:#1a1a1a">${r.name}</p>
+              <p style="font-size:12px;color:#888;line-height:1.4">${r.talking_point}</p>
+            </div>
+          </div>`).join('')}
+      </div>
+    </details>` : '';
+
+  content.innerHTML = topHtml + othersHtml;
+}
+
+function populateMultiLocation(ml) {
+  const content = document.getElementById('multiLocationContent');
+  if (!ml) return;
+
+  const enabledColor = ml.enabled ? '#16A34A' : '#DC2626';
+  const atCap = ml.enabled && ml.locationCount >= ml.maxLocations;
+  const upgradeNeeded = ml.eligibleForUnlimited && ml.plan !== 'Pro Plan' && ml.plan !== 'Plus Plan';
+
+  const summaryHtml = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <div class="metric">
+        <div class="metric-label">Multi-location</div>
+        <div style="font-size:15px;font-weight:700;color:${enabledColor}">${ml.enabled ? 'Enabled' : 'Not enabled'}</div>
+        <div style="font-size:11px;color:#888">Salesforce entitlement</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Active locations</div>
+        <div class="metric-value">${ml.locationCount}</div>
+        <div style="font-size:11px;color:${atCap ? '#DC2626' : '#888'}">${atCap ? 'At plan limit' : 'of ' + ml.maxLocations + ' max'}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Plan cap</div>
+        <div class="metric-value" style="font-size:15px">${ml.maxLocations === 999 ? 'Unlimited' : ml.maxLocations}</div>
+        <div style="font-size:11px;color:#888">${ml.plan}</div>
+      </div>
+    </div>`;
+
+  const locationsHtml = (ml.locations || []).map(loc => `
+    <div style="border:1px solid #E5E4E0;border-radius:9px;overflow:hidden;margin-bottom:10px">
+      <div style="background:#F7F6F3;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <p style="font-weight:700;font-size:14px;color:#1a1a1a">${loc.name}</p>
+          <p style="font-size:11px;color:#666">Manager: ${loc.manager} &nbsp;·&nbsp; On Yoco since ${loc.onboarded} &nbsp;·&nbsp; <span class="tag tag-green" style="font-size:10px">${loc.status}</span></p>
+        </div>
+        <div style="text-align:right">
+          <p style="font-size:14px;font-weight:700;color:#1a1a1a">${loc.tpv}</p>
+          <p style="font-size:11px;color:#16A34A;font-weight:600">${loc.tpvDelta} vs last month</p>
+        </div>
+      </div>
+      <div style="padding:10px 14px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+          <div><div class="metric-label">Transactions</div><div style="font-size:14px;font-weight:700">${loc.transactions.toLocaleString()}</div></div>
+          <div><div class="metric-label">Avg basket</div><div style="font-size:14px;font-weight:700">${loc.avgBasket}</div></div>
+          <div><div class="metric-label">Terminals</div><div style="font-size:14px;font-weight:700">${loc.terminals} <span style="font-size:11px;font-weight:400;color:#888">device${loc.terminals > 1 ? 's' : ''}</span></div></div>
+        </div>
+        <p style="font-size:12px;margin-bottom:6px"><strong>Products:</strong> ${loc.products.join(' · ')}</p>
+        ${loc.openTickets > 0 ? `<p style="font-size:12px;margin-bottom:6px"><strong>Open tickets:</strong> <span style="color:#DC2626">${loc.openTickets} open</span></p>` : ''}
+        <p style="font-size:12px;color:#666;background:#F7F6F3;padding:7px 10px;border-radius:6px">${loc.notes}</p>
+      </div>
+    </div>`).join('');
+
+  const upgradeHtml = upgradeNeeded ? `
+    <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400E;line-height:1.5;margin-top:4px">
+      <strong>⚡ Upgrade opportunity:</strong> ${ml.notes}
+    </div>` : '';
+
+  content.innerHTML = summaryHtml + locationsHtml + upgradeHtml;
+}
+
 
 async function generateBrief() {
   const merchant = document.getElementById('merchantName').value.trim();
@@ -1091,6 +1279,13 @@ async function generateBrief() {
     const isGroup = document.getElementById('isGroupAccount').checked;
     const d = getMockData(merchant);
     populate(merchant, am, d);
+
+    // Populate multi-location section
+    populateMultiLocation(d.salesforce.multiLocation);
+
+    // Populate relevant releases section
+    const relevantReleases = getRelevantReleases(d);
+    populateReleases(relevantReleases);
 
     if (isGroup) {
       const gd = getGroupMockData(merchant);
