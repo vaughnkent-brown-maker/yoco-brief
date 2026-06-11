@@ -13,6 +13,7 @@ export default async function handler(req, res) {
   const models = [
     'gemini-3.5-flash',
     'gemini-2.5-flash-preview-05-20',
+    'gemini-2.0-flash-lite',
     'gemini-1.5-flash'
   ];
 
@@ -27,10 +28,7 @@ export default async function handler(req, res) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              maxOutputTokens: maxTokens || 1200,
-              temperature: 0.3
-            }
+            generationConfig: { maxOutputTokens: maxTokens || 1200, temperature: 0.3 }
           })
         }
       );
@@ -41,19 +39,34 @@ export default async function handler(req, res) {
         return res.status(200).json({ text, model });
       }
 
-      const error = await response.json();
-      const msg = error.error?.message || 'Unknown error';
-
-      // Only fallback on overload/unavailable errors
-      if (response.status === 503 || response.status === 429 || 
-          msg.includes('high demand') || msg.includes('overloaded') || 
-          msg.includes('no longer available') || msg.includes('not found')) {
-        lastError = `${model}: ${msg}`;
-        continue; // Try next model
+      // Try to parse error
+      let errorMsg = 'Unknown error';
+      try {
+        const errData = await response.json();
+        errorMsg = errData.error?.message || errorMsg;
+      } catch(e) {
+        errorMsg = await response.text().catch(() => 'Unknown error');
       }
 
-      // For other errors (auth, bad request etc) fail immediately
-      return res.status(response.status).json({ error: msg });
+      // Retry on overload/unavailable errors
+      const shouldRetry = (
+        response.status === 503 ||
+        response.status === 429 ||
+        response.status === 404 ||
+        errorMsg.includes('overload') ||
+        errorMsg.includes('high demand') ||
+        errorMsg.includes('no longer available') ||
+        errorMsg.includes('not found') ||
+        errorMsg.includes('RESOURCE_EXHAUSTED')
+      );
+
+      if (shouldRetry) {
+        lastError = `${model}: ${errorMsg}`;
+        continue;
+      }
+
+      // Auth or bad request — fail immediately
+      return res.status(response.status).json({ error: errorMsg });
 
     } catch (err) {
       lastError = `${model}: ${err.message}`;
@@ -62,7 +75,7 @@ export default async function handler(req, res) {
   }
 
   // All models failed
-  return res.status(503).json({ 
-    error: `All models unavailable — please try again in a few minutes. Last error: ${lastError}` 
+  return res.status(503).json({
+    error: `All Gemini models temporarily unavailable. Please try again in a few minutes.`
   });
 }

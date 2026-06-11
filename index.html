@@ -12,8 +12,8 @@
   .header { background: #1a1a1a; border-bottom: 1px solid #333; padding: 0 2rem; display: flex; align-items: center; gap: 1rem; height: 60px; }
   .logo { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 900; color: #fff; letter-spacing: 3px; }
   .badge { font-size: 11px; background: rgba(255,255,255,0.15); color: #fff; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
-  .main { max-width: 920px; margin: 0 auto; padding: 2rem 1.5rem; }
-  .search-card { background: #fff; border: 1px solid #E5E4E0; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .main { max-width: 1200px; margin: 0 auto; padding: 2rem 2rem; }
+  .search-card { background: #fff; border: 1px solid #E5E4E0; border-radius: 14px; padding: 1.75rem 2rem; margin-bottom: 1.25rem; }
   .search-card h1 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
   .search-card p { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
@@ -28,7 +28,7 @@
   .btn-success { height: 40px; padding: 0 20px; background: #16A34A; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
   .btn-success:hover { background: #15803D; }
   .btn-success:disabled { opacity: 0.5; cursor: not-allowed; }
-  .data-sources { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .data-sources { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 1.25rem; }
   .source-pill { background: #fff; border: 1px solid #E5E4E0; border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
   .source-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: #D0CCC8; }
   .source-dot.mock { background: #F59E0B; }
@@ -40,12 +40,12 @@
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   .loading p { font-size: 14px; color: #888; }
   .brief-output { display: none; }
-  .brief-header { background: #fff; border: 1px solid #E5E4E0; border-radius: 14px 14px 0 0; border-bottom: none; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+  .brief-header { background: #fff; border: 1px solid #E5E4E0; border-radius: 14px 14px 0 0; border-bottom: none; padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; }
   .brief-title { font-size: 18px; font-weight: 700; }
   .brief-meta { font-size: 12px; color: #888; margin-top: 3px; }
   .brief-actions { display: flex; gap: 8px; }
   .brief-body { background: #fff; border: 1px solid #E5E4E0; border-radius: 0 0 14px 14px; overflow: hidden; }
-  .brief-section { padding: 1.4rem 1.5rem; border-bottom: 1px solid #F0EFE9; }
+  .brief-section { padding: 1.5rem 2rem; border-bottom: 1px solid #F0EFE9; }
   .brief-section:last-child { border-bottom: none; }
   .section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; color: #aaa; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
   .sdot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
@@ -72,10 +72,10 @@
   .tag-green { background: #DCFCE7; color: #166534; }
   .tag-red { background: #FEF2F2; color: #B91C1C; }
   .tag-gray { background: #F3F4F6; color: #374151; }
-  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px; }
   .chart-box { background: #F9F9F7; border: 1px solid #EEECEA; border-radius: 10px; padding: 14px; }
   .chart-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-  .chart-container { position: relative; height: 140px; }
+  .chart-container { position: relative; height: 180px; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
   .col-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; font-weight: 600; }
   .info-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid #F5F4F0; font-size: 13px; }
@@ -272,7 +272,7 @@
       </div>
     </div>
 
-    <div id="notionSaveStatus" style="display:none;padding:10px 1.5rem;font-size:13px;border-bottom:1px solid #F0EFE9;display:none;align-items:center;gap:8px"></div>
+    <div id="notionSaveStatus" style="display:none;padding:10px 1.5rem;font-size:13px;border-bottom:1px solid #F0EFE9;align-items:center;gap:8px"></div>
     <div class="brief-body">
 
       <!-- TRANSACTION TRENDS -->
@@ -1106,35 +1106,20 @@ async function callGemini(prompt, apiKey, maxTokens) {
   if (!res.ok) {
     const msg = data.error || 'Gemini API error';
     if (res.status === 429) throw new Error('Rate limit hit — wait a moment and try again');
-    if (res.status === 503) throw new Error('Gemini models overloaded — retrying with fallback model');
+    if (res.status === 503) throw new Error('All Gemini models temporarily unavailable — please try again in a few minutes');
     if (res.status === 500 && msg.includes('not configured')) throw new Error('Gemini API key not set — add GEMINI_API_KEY in Vercel env vars');
     throw new Error(msg);
   }
 
-  return data.text || '';
+  return data.text || data || '';
 }
 
 async function fetchSlackData(merchant) {
-  setDot('dot-slack', 'loading');
-  document.getElementById('slack-status').textContent = 'Searching...';
-  try {
-    const res = await fetch('/api/slack-search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ merchant })
-    });
-    if (!res.ok) throw new Error('Slack search failed');
-    const data = await res.json();
-    setDot('dot-slack', 'active');
-    document.getElementById('slack-status').textContent = 'Live';
-    return data.summary || 'No Slack mentions found.';
-  } catch(err) {
-    const errMsg = err.message || 'Slack search failed';
-    setDot('dot-slack', 'mock', errMsg);
-    document.getElementById('slack-status').textContent = 'Error';
-    const d = getMockData(merchant);
-    return '[Live search unavailable — ' + errMsg + '] ' + d.slack.mentions.map(m => m.date + ' · ' + m.channel + ': ' + m.text).join('\n\n');
-  }
+  // Slack search temporarily disabled — returning mock data
+  setDot('dot-slack', 'mock');
+  document.getElementById('slack-status').textContent = 'Mock';
+  const d = getMockData(merchant);
+  return d.slack.mentions.map(m => m.date + ' · ' + m.channel + ': ' + m.text).join('\n\n');
 }
 
 async function fetchNotionData(merchant) {
@@ -1309,33 +1294,41 @@ async function generateBrief() {
       document.getElementById('groupSection').style.display = 'none';
     }
 
-    // Show loading state for Slack (blocking) and Notion (non-blocking)
+    // Show loading states — both Slack and Notion run in background
     document.getElementById('slackContent').innerHTML = '<p style="font-size:13px;color:#888;font-style:italic">Searching Slack...</p>';
-    document.getElementById('notionContent').innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#888">
-        <div style="width:12px;height:12px;border:2px solid #E5E4E0;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>
-        Searching Notion in the background...
-      </div>`;
+    document.getElementById('notionContent').innerHTML = '<p style="font-size:13px;color:#888;font-style:italic">Loading...</p>';
     setDot('dot-slack', 'loading');
-    setDot('dot-notion', 'loading');
+    setDot('dot-notion', 'mock');
     document.getElementById('slack-status').textContent = 'Searching...';
-    document.getElementById('notion-status').textContent = 'Loading...';
+    document.getElementById('notion-status').textContent = 'Mock';
 
-    // Fetch Slack only (blocking) — Notion runs in background
-    const slackData = await fetchSlackData(merchant);
-    document.getElementById('slackContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${escapeHtml(slackData)}</p>`;
+    // Fire Slack in background with 10s timeout — don't block brief generation
+    const slackPromise = Promise.race([
+      fetchSlackData(merchant),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Slack search timed out')), 10000))
+    ]).then(slackData => {
+      document.getElementById('slackContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${escapeHtml(slackData)}</p>`;
+      return slackData;
+    }).catch(err => {
+      const d2 = getMockData(merchant);
+      const fallback = d2.slack.mentions.map(m => m.date + ' · ' + m.channel + ': ' + m.text).join('\n\n');
+      document.getElementById('slackContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#888">${escapeHtml(fallback)}</p>`;
+      setDot('dot-slack', 'mock', err.message);
+      document.getElementById('slack-status').textContent = 'Timed out';
+      return fallback;
+    });
 
-    // Fire Notion in background — don't await it
+    // Fire Notion in background — don't block
     fetchNotionData(merchant).then(notionData => {
       document.getElementById('notionContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#333">${escapeHtml(notionData)}</p>`;
     }).catch(() => {
-      document.getElementById('notionContent').innerHTML = '<p style="font-size:13px;color:#aaa;font-style:italic">Notion search timed out — try refreshing.</p>';
-      setDot('dot-notion', 'mock');
-      document.getElementById('notion-status').textContent = 'Timed out';
+      const d2 = getMockData(merchant);
+      const fallback = d2.notion.briefs.map(b => b.date + ': ' + b.summary).join('\n\n');
+      document.getElementById('notionContent').innerHTML = `<p style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:#888">${escapeHtml(fallback)}</p>`;
     });
 
-    // Generate AI synthesis immediately with Slack data — Notion will update separately
-    const res = await callGemini(buildPrompt(merchant, am, d, slackData, 'Notion search in progress — not yet available'), null, 1200);
+    // Generate AI synthesis immediately — don't wait for Slack/Notion
+    const res = await callGemini(buildPrompt(merchant, am, d, 'Searching Slack...', 'Searching Notion...'), null, 1200);
     document.getElementById('aiContent').textContent = res;
 
     document.getElementById('briefTitle').textContent = merchant;
@@ -1638,11 +1631,14 @@ async function sendSlackNotification(amName, merchant, briefUrl) {
         briefUrl: briefUrl || window.location.href
       })
     });
+    const notifyData = await res.json().catch(() => ({}));
     if (res.ok) {
       const statusBar = document.getElementById('notionSaveStatus');
       statusBar.style.display = 'flex';
-      statusBar.innerHTML = '<span style="color:#4A154B;font-weight:600">&#10003; Slack notification sent to ' + amName + '</span>';
-      setTimeout(() => { statusBar.style.display = 'none'; }, 4000);
+      statusBar.innerHTML = '<span style="color:#4A154B;font-weight:600">&#10003; Slack DM sent to ' + amName + '</span>';
+      setTimeout(() => { statusBar.style.display = 'none'; }, 6000);
+    } else {
+      console.log('Slack notify response not ok:', notifyData);
     }
   } catch(err) {
     // Silent fail — notification is non-critical
