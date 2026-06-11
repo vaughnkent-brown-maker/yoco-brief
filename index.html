@@ -1111,7 +1111,15 @@ async function callGemini(prompt, apiKey, maxTokens) {
     throw new Error(msg);
   }
 
-  return data.text || data || '';
+  // Show fallback message if OpenAI was used
+  if (data.fallback && data.fallbackMessage) {
+    const statusBar = document.getElementById('notionSaveStatus');
+    statusBar.style.display = 'flex';
+    statusBar.innerHTML = '<span style="color:#D97706;font-weight:600">⚠️ ' + data.fallbackMessage + '</span>';
+    setTimeout(() => { statusBar.style.display = 'none'; }, 8000);
+  }
+
+  return data.text || '';
 }
 
 async function fetchSlackData(merchant) {
