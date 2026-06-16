@@ -110,6 +110,7 @@ export default async function handler(req, res) {
       if (taskRes.ok) {
         const taskData = await taskRes.json();
         previousTasks = (taskData.records || []).map(t => ({
+          id: t.Id,
           subject: t.Subject,
           description: t.Description || '',
           status: t.Status,
@@ -133,6 +134,7 @@ export default async function handler(req, res) {
       if (openRes.ok) {
         const openData = await openRes.json();
         openTasks = (openData.records || []).map(t => ({
+          id: t.Id,
           subject: t.Subject,
           status: t.Status,
           priority: t.Priority,
@@ -141,7 +143,33 @@ export default async function handler(req, res) {
       }
     } catch(e) { /* skip */ }
 
-    // Step 4 — fetch child/sub accounts if group account requested
+    // Step 4 — fetch main contacts linked to this account
+    let contacts = [];
+    try {
+      const contactSoql = `SELECT Id, FirstName, LastName, Title, Phone, MobilePhone, Email
+        FROM Contact WHERE AccountId = '${a.Id}'
+        ORDER BY CreatedDate ASC LIMIT 5`;
+      const contactRes = await fetch(
+        `${sfInstance}/services/data/v59.0/query?q=${encodeURIComponent(contactSoql)}`,
+        { headers: { 'Authorization': `Bearer ${sessionId}`, 'Content-Type': 'application/json' } }
+      );
+      if (contactRes.ok) {
+        const contactData = await contactRes.json();
+        contacts = (contactData.records || []).map(c => ({
+          id: c.Id,
+          firstName: c.FirstName || '',
+          lastName: c.LastName || '',
+          name: `${c.FirstName || ''} ${c.LastName || ''}`.trim(),
+          title: c.Title || '',
+          phone: c.Phone || '',
+          mobile: c.MobilePhone || '',
+          email: c.Email || '',
+          sfUrl: `${sfInstance}/${c.Id}`
+        }));
+      }
+    } catch(e) { /* skip contacts */ }
+
+    // Step 5 — fetch child/sub accounts if group account requested
     let childAccounts = [];
     if (groupAccount) {
       try {
@@ -206,6 +234,22 @@ export default async function handler(req, res) {
         const keyAccKey = allCustomKeys.find(k => k.toLowerCase().includes('key_account') || k.toLowerCase().includes('keyaccount'));
         const npsKey = allCustomKeys.find(k => k.toLowerCase().includes('nps'));
         const healthKey = allCustomKeys.find(k => k.toLowerCase().includes('health'));
+        // Find capital-related fields
+        const capitalKey = allCustomKeys.find(k => k.toLowerCase().includes('capital') && k.toLowerCase().includes('balance'));
+        const capitalTakenKey = allCustomKeys.find(k => k.toLowerCase().includes('capital') && (k.toLowerCase().includes('taken') || k.toLowerCase().includes('total') || k.toLowerCase().includes('amount')));
+        const capitalStatusKey = allCustomKeys.find(k => k.toLowerCase().includes('capital') && k.toLowerCase().includes('status'));
+        const capitalLimitKey = allCustomKeys.find(k => k.toLowerCase().includes('capital') && k.toLowerCase().includes('limit'));
+        const capitalEligibleKey = allCustomKeys.find(k => k.toLowerCase().includes('capital') && k.toLowerCase().includes('eligible'));
+
+        // Find product usage fields
+        const terminalKey = allCustomKeys.find(k => k.toLowerCase().includes('terminal') || k.toLowerCase().includes('device'));
+        const posKey = allCustomKeys.find(k => k.toLowerCase().includes('pos') || k.toLowerCase().includes('point_of_sale'));
+        const gatewayKey = allCustomKeys.find(k => k.toLowerCase().includes('gateway') || k.toLowerCase().includes('ecommerce') || k.toLowerCase().includes('online'));
+        const savingsKey = allCustomKeys.find(k => k.toLowerCase().includes('savings') || k.toLowerCase().includes('saving'));
+        const lastTransKey = allCustomKeys.find(k => k.toLowerCase().includes('last') && k.toLowerCase().includes('transaction'));
+        const riskKey = allCustomKeys.find(k => k.toLowerCase().includes('risk') || k.toLowerCase().includes('churn'));
+        const segmentKey = allCustomKeys.find(k => k.toLowerCase().includes('segment') || k.toLowerCase().includes('merchant_type'));
+
         customFields = {
           buuid: buuidKey ? d[buuidKey] : null,
           billingPackage: d.Billing_Package__c || d.BillingPackage__c || null,
@@ -218,6 +262,20 @@ export default async function handler(req, res) {
           lostDeals: d.Lost_deals__c || null,
           volumeThisMonth: d.Pipedrive_Legacy_Volume_this_month__c || null,
           fullyOnboarded: d.Fully_Onboarded__c || null,
+          // Capital
+          capitalBalance: capitalKey ? d[capitalKey] : null,
+          capitalTaken: capitalTakenKey ? d[capitalTakenKey] : null,
+          capitalStatus: capitalStatusKey ? d[capitalStatusKey] : null,
+          capitalLimit: capitalLimitKey ? d[capitalLimitKey] : null,
+          capitalEligible: capitalEligibleKey ? d[capitalEligibleKey] : null,
+          // Products
+          terminalCount: terminalKey ? d[terminalKey] : null,
+          hasGateway: gatewayKey ? d[gatewayKey] : null,
+          hasSavings: savingsKey ? d[savingsKey] : null,
+          lastTransaction: lastTransKey ? d[lastTransKey] : null,
+          riskFlag: riskKey ? d[riskKey] : null,
+          segment: segmentKey ? d[segmentKey] : null,
+          // All keys for debugging
           allCustom: allCustomKeys
         };
       }
@@ -235,8 +293,10 @@ export default async function handler(req, res) {
       owner: a.Owner?.Name,
       createdDate: a.CreatedDate,
       sfUrl: `${sfInstance}/${a.Id}`,
+      sfInstance,
       openTasks,
       previousTasks,
+      contacts,
       childAccounts,
       isGroupAccount: groupAccount || false,
       ...customFields
