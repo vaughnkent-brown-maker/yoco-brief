@@ -342,7 +342,7 @@ async function generate() {
   if (!merchant) { alert('Enter a merchant name'); return; }
 
   _sf = null;
-  window._chosenAccountId = null;
+  // Note: do NOT reset _chosenAccountId here — selectAccount() sets it just before calling generate()
   document.getElementById('subAccountsSection').style.display = 'none';
   document.getElementById('accountPicker').style.display = 'none';
   document.getElementById('briefOutput').style.display = 'block';
