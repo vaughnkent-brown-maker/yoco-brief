@@ -84,21 +84,23 @@ export default async function handler(req, res) {
     const a = accountId ? (records.find(r => r.Id === accountId) || records[0]) : records[0];
 
     // Step 2 — run all secondary queries IN PARALLEL
+    const safeQuery = async (soql) => { try { return await query(soql); } catch(e) { return { records: [] }; } };
+
     const [customData, prevTasksData, openTasksData, contactsData, oppsData, casesData] = await Promise.all([
-      getRecord(a.Id),
-      query(`SELECT Id, Subject, Description, Status, Priority, ActivityDate, CreatedDate, Owner.Name
+      getRecord(a.Id).catch(() => ({})),
+      safeQuery(`SELECT Id, Subject, Description, Status, Priority, ActivityDate, CreatedDate, Owner.Name
              FROM Task WHERE WhatId = '${a.Id}' AND IsClosed = true
              ORDER BY CreatedDate DESC LIMIT 5`),
-      query(`SELECT Id, Subject, Status, Priority, ActivityDate
+      safeQuery(`SELECT Id, Subject, Status, Priority, ActivityDate
              FROM Task WHERE WhatId = '${a.Id}' AND IsClosed = false
              ORDER BY ActivityDate ASC LIMIT 5`),
-      query(`SELECT Id, FirstName, LastName, Title, Phone, MobilePhone, Email
+      safeQuery(`SELECT Id, FirstName, LastName, Title, Phone, MobilePhone, Email
              FROM Contact WHERE AccountId = '${a.Id}'
              ORDER BY CreatedDate ASC LIMIT 5`),
-      query(`SELECT Id, Name, StageName, Amount, CloseDate, Owner.Name, Description
+      safeQuery(`SELECT Id, Name, StageName, Amount, CloseDate, Owner.Name, Description
              FROM Opportunity WHERE AccountId = '${a.Id}' AND IsClosed = false
              ORDER BY CloseDate ASC LIMIT 5`),
-      query(`SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, ClosedDate, Description, Origin
+      safeQuery(`SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, ClosedDate, Description, Origin
              FROM Case WHERE AccountId = '${a.Id}'
              ORDER BY CreatedDate DESC LIMIT 10`)
     ]);
