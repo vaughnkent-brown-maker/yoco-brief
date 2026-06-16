@@ -243,6 +243,6 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message, stack: err.stack?.split('\n').slice(0,3).join(' | ') });
   }
 }
