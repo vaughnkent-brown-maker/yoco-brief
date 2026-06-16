@@ -847,7 +847,7 @@ APPROACH: [1 sentence]`;
 
     clearInterval(_timer);
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${am}`;
+    document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${_sf?.owner || '—'}`;
     window._chosenAccountId = null;
 
   } catch(err) {
