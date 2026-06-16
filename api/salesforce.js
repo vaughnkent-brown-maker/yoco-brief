@@ -235,6 +235,10 @@ export default async function handler(req, res) {
       owner: a.Owner?.Name,
       createdDate: a.CreatedDate,
       sfUrl: `${sfInstance}/${a.Id}`,
+      openTasks,
+      previousTasks,
+      childAccounts,
+      isGroupAccount: groupAccount || false,
       ...customFields
     });
 
