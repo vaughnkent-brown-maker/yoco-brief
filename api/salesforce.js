@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
+ 
   const { merchant, accountId, groupAccount } = req.body;
   if (!merchant) return res.status(400).json({ error: 'Merchant name required' });
 
