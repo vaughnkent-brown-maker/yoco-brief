@@ -428,6 +428,7 @@ Only use what's in the data above. Be specific. Keep it tight.`;
     clearInterval(_timer);
     document.getElementById('loading').style.display = 'none';
     document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${am}`;
+    window._chosenAccountId = null; // Clear after successful generation
 
     // Slack notify
     fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName:am, merchant}) }).catch(()=>{});
