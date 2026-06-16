@@ -79,15 +79,26 @@ export default async function handler(req, res) {
         { headers: { 'Authorization': `Bearer ${sessionId}` } }
       );
       if (descRes.ok) {
-        const descData = await descRes.json();
-        // Pull any field that looks like BUUID or billing
+        const d = await descRes.json();
+        const allCustomKeys = Object.keys(d).filter(k => k.endsWith('__c'));
+        // Find BUUID field — try all likely names
+        const buuidKey = allCustomKeys.find(k => k.toLowerCase().includes('uuid') || k.toLowerCase().includes('buuid'));
+        const keyAccKey = allCustomKeys.find(k => k.toLowerCase().includes('key_account') || k.toLowerCase().includes('keyaccount'));
+        const npsKey = allCustomKeys.find(k => k.toLowerCase().includes('nps'));
+        const healthKey = allCustomKeys.find(k => k.toLowerCase().includes('health'));
         customFields = {
-          buuid: descData.Business_Uuid__c || descData.BusinessUuid__c || descData.BUUID__c || descData.Business_UUID__c || null,
-          billingPackage: descData.Billing_Package__c || descData.BillingPackage__c || descData.Billing_plan__c || null,
-          isKeyAccount: descData.Key_Account__c || descData.IsKeyAccount__c || false,
-          nps: descData.NPS_Score__c || descData.NPS__c || null,
-          health: descData.Account_Health__c || descData.Health__c || null,
-          allCustom: Object.keys(descData).filter(k => k.endsWith('__c')).slice(0, 20)
+          buuid: buuidKey ? d[buuidKey] : null,
+          billingPackage: d.Billing_Package__c || d.BillingPackage__c || null,
+          isKeyAccount: keyAccKey ? d[keyAccKey] : false,
+          nps: npsKey ? d[npsKey] : null,
+          health: healthKey ? d[healthKey] : null,
+          tpv30Day: d.X30_Day_TPV__c || null,
+          openDeals: d.Open_deals__c || null,
+          wonDeals: d.Won_deals__c || null,
+          lostDeals: d.Lost_deals__c || null,
+          volumeThisMonth: d.Pipedrive_Legacy_Volume_this_month__c || null,
+          fullyOnboarded: d.Fully_Onboarded__c || null,
+          allCustom: allCustomKeys
         };
       }
     } catch(e) { /* skip */ }
