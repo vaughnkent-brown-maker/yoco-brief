@@ -772,22 +772,17 @@ async function generate() {
     document.getElementById('rel-status').textContent = `${relevant.length} relevant`;
 
     // AI synthesis
-    const prompt = `You are an Account Manager at Yoco preparing for a merchant meeting with "${merchant}".
+    const prompt = `Pre-meeting brief for Yoco AM visiting "${merchant}".
 
-SALESFORCE DATA:
-${sfData?.found ? `Industry: ${sfData.industry||'Unknown'} | Billing: ${sfData.billingPackage||'Unknown'} | Type: ${sfData.type||'Unknown'} | Location: ${sfData.city||''} ${sfData.country||''} | Key Account: ${sfData.isKeyAccount?'Yes':'No'} | Owner: ${sfData.owner||'Unknown'} | 30-Day TPV: ${sfData.tpv30Day?fmt(sfData.tpv30Day):'Unknown'} | Volume this month: ${sfData.volumeThisMonth?fmt(sfData.volumeThisMonth):'Unknown'} | Fully onboarded: ${sfData.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData.openDeals||0} | On Yoco since: ${sfData.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData.openTasks?.map(t=>t.subject).join(', ')||'None'} | Support cases: ${sfData.cases?.length||0} total, ${(sfData.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open | Capital status: ${sfData.capitalStatus||'Unknown'} | Capital taken: ${sfData.capitalTaken?fmt(sfData.capitalTaken):'None'} | Capital balance: ${sfData.capitalBalance?fmt(sfData.capitalBalance):'None'} | Capital eligible: ${sfData.capitalEligible?'Yes':'Unknown'} | Terminals: ${sfData.terminalCount||'Unknown'} | Has gateway: ${sfData.hasGateway||'Unknown'} | Previous activity: ${sfData.previousTasks?.map(t=>t.subject+(t.description?' — '+t.description.slice(0,60):'')).join(' | ')||'None'}${sfData.isGroupAccount && sfData.childAccounts?.length ? ` | GROUP ACCOUNT with ${sfData.childAccounts.length} sub-accounts: ${sfData.childAccounts.map(c=>c.name+(c.billingPackage?' ('+c.billingPackage+')':'')).join(', ')}` : ''}` : 'Not available'}
+DATA: Industry: ${sfData?.industry||'Unknown'} | Plan: ${sfData?.billingPackage||'Unknown'} | TPV (30d): ${sfData?.tpv30Day?fmt(sfData.tpv30Day):'Unknown'} | Key Account: ${sfData?.isKeyAccount?'Yes':'No'} | City: ${sfData?.city||'Unknown'} | Onboarded: ${sfData?.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData?.openDeals||0} | On Yoco since: ${sfData?.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData?.openTasks?.map(t=>t.subject).join(', ')||'None'} | Cases: ${sfData?.cases?.length||0} total, ${(sfData?.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open | Capital: ${sfData?.capitalStatus||'none taken'} | Terminals: ${sfData?.terminalCount||'?'} | Gateway: ${sfData?.hasGateway||'?'}
+RELEASES: ${relevant.slice(0,3).map(r=>`${r.name} — ${r.talking_point}`).join(' | ')}
 
-RELEVANT PRODUCT RELEASES:
-${relevant.slice(0,3).map(r=>`- ${r.name}: ${r.talking_point}`).join('\n')}
-
-Write a tight pre-meeting brief:
-ACCOUNT SUMMARY: 2-3 sentences on this merchant and their Yoco status.
-KEY OPPORTUNITIES: 2-3 bullets on commercial opportunities.
-TALKING POINTS: 2-3 bullets on product features to highlight.
-WATCH OUTS: 1-2 bullets on risks.
-RECOMMENDED APPROACH: 1-2 sentences on how to frame this meeting.
-
-Only use what's in the data above. Be specific. Keep it tight.`;
+Write in this exact format (be concise, 1-2 sentences per section):
+ACCOUNT SUMMARY: [2 sentences max]
+KEY OPPORTUNITIES: [2 bullets]
+TALKING POINTS: [2 bullets]
+WATCH OUTS: [1 bullet]
+RECOMMENDED APPROACH: [1 sentence]`;
 
     const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:1000}) });
     if (ar.ok) {
