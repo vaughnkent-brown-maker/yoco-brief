@@ -9,14 +9,13 @@ export default async function handler(req, res) {
   const username = process.env.SF_USERNAME;
   const password = process.env.SF_PASSWORD;
   const token = process.env.SF_SECURITY_TOKEN;
-  const instanceUrl = process.env.SF_INSTANCE_URL || 'https://yoco.lightning.force.com';
 
   if (!username || !password || !token) {
-    return res.status(500).json({ error: 'Salesforce credentials not configured — add SF_USERNAME, SF_PASSWORD, SF_SECURITY_TOKEN to Vercel env vars' });
+    return res.status(500).json({ error: 'Salesforce credentials not configured' });
   }
 
   try {
-    // SOAP login — no Connected App needed
+    // SOAP login
     const soapBody = `<?xml version="1.0" encoding="utf-8"?>
 <env:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -31,48 +30,31 @@ export default async function handler(req, res) {
 
     const authRes = await fetch('https://login.salesforce.com/services/Soap/u/59.0', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml',
-        'SOAPAction': 'login'
-      },
+      headers: { 'Content-Type': 'text/xml', 'SOAPAction': 'login' },
       body: soapBody
     });
 
     const authText = await authRes.text();
-
     const sessionMatch = authText.match(/<sessionId>([^<]+)<\/sessionId>/);
     const serverMatch = authText.match(/<serverUrl>([^<]+)<\/serverUrl>/);
 
     if (!sessionMatch) {
       const errMatch = authText.match(/<faultstring>([^<]+)<\/faultstring>/);
-      return res.status(401).json({
-        error: 'Salesforce login failed: ' + (errMatch?.[1] || 'Check username, password and security token')
-      });
+      return res.status(401).json({ error: 'Login failed: ' + (errMatch?.[1] || 'Check credentials') });
     }
 
     const sessionId = sessionMatch[1];
-    const serverUrl = serverMatch?.[1] || '';
-    const sfInstance = serverUrl.match(/https?:\/\/[^\/]+/)?.[0] || instanceUrl;
+    const sfInstance = serverMatch?.[1].match(/https?:\/\/[^\/]+/)?.[0] || 'https://yoco.my.salesforce.com';
 
-    // SOQL query
-    const soql = `SELECT Id, Name, Industry, Type, Phone, BillingCity,
-      Billing_Package__c, Business_Uuid__c, Key_Account__c,
-      Owner.Name, NPS_Score__c, CreatedDate,
-      (SELECT Id, Subject, Status, Priority, ActivityDate FROM OpenActivities LIMIT 5),
-      (SELECT Id, Name, StageName, Amount, CloseDate FROM Opportunities WHERE IsClosed = false LIMIT 3)
-      FROM Account
-      WHERE Name LIKE '%${merchant.replace(/'/g, "\\'")}%'
-      ORDER BY LastModifiedDate DESC
-      LIMIT 3`;
+    // Step 1 — find account with standard fields only
+    const safeMerchant = merchant.replace(/'/g, "\\'");
+    const soql = `SELECT Id, Name, Industry, Type, Phone, BillingCity, BillingCountry, Owner.Name, CreatedDate, LastModifiedDate
+      FROM Account WHERE Name LIKE '%${safeMerchant}%'
+      ORDER BY LastModifiedDate DESC LIMIT 3`;
 
     const queryRes = await fetch(
       `${sfInstance}/services/data/v59.0/query?q=${encodeURIComponent(soql)}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${sessionId}`,
-          'Content-Type': 'application/json'
-        }
-      }
+      { headers: { 'Authorization': `Bearer ${sessionId}`, 'Content-Type': 'application/json' } }
     );
 
     if (!queryRes.ok) {
@@ -84,24 +66,31 @@ export default async function handler(req, res) {
     const records = data.records || [];
 
     if (records.length === 0) {
-      return res.status(200).json({ found: false, summary: `No Salesforce account found for "${merchant}"` });
+      return res.status(200).json({ found: false, summary: `No account found for "${merchant}"` });
     }
 
     const a = records[0];
 
-    // Now try to get custom fields separately
+    // Step 2 — discover custom fields on this account
     let customFields = {};
     try {
-      const customSoql = `SELECT Id, Business_Uuid__c, Billing_Package__c, Key_Account__c, NPS_Score__c FROM Account WHERE Id = '${a.Id}'`;
-      const customRes = await fetch(
-        `${sfInstance}/services/data/v59.0/query?q=${encodeURIComponent(customSoql)}`,
-        { headers: { 'Authorization': `Bearer ${sessionId}`, 'Content-Type': 'application/json' } }
+      const descRes = await fetch(
+        `${sfInstance}/services/data/v59.0/sobjects/Account/${a.Id}`,
+        { headers: { 'Authorization': `Bearer ${sessionId}` } }
       );
-      if (customRes.ok) {
-        const customData = await customRes.json();
-        if (customData.records?.[0]) customFields = customData.records[0];
+      if (descRes.ok) {
+        const descData = await descRes.json();
+        // Pull any field that looks like BUUID or billing
+        customFields = {
+          buuid: descData.Business_Uuid__c || descData.BusinessUuid__c || descData.BUUID__c || descData.Business_UUID__c || null,
+          billingPackage: descData.Billing_Package__c || descData.BillingPackage__c || descData.Billing_plan__c || null,
+          isKeyAccount: descData.Key_Account__c || descData.IsKeyAccount__c || false,
+          nps: descData.NPS_Score__c || descData.NPS__c || null,
+          health: descData.Account_Health__c || descData.Health__c || null,
+          allCustom: Object.keys(descData).filter(k => k.endsWith('__c')).slice(0, 20)
+        };
       }
-    } catch(e) { /* custom fields not available */ }
+    } catch(e) { /* skip */ }
 
     return res.status(200).json({
       found: true,
@@ -112,15 +101,10 @@ export default async function handler(req, res) {
       phone: a.Phone,
       city: a.BillingCity,
       country: a.BillingCountry,
-      billingPackage: customFields.Billing_Package__c || null,
-      buuid: customFields.Business_Uuid__c || null,
-      isKeyAccount: customFields.Key_Account__c || false,
       owner: a.Owner?.Name,
-      nps: customFields.NPS_Score__c || null,
       createdDate: a.CreatedDate,
-      openTasks: [],
-      opportunities: [],
-      sfUrl: `${sfInstance}/${a.Id}`
+      sfUrl: `${sfInstance}/${a.Id}`,
+      ...customFields
     });
 
   } catch (err) {
