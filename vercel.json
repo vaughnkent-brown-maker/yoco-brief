@@ -1,5 +1,8 @@
 {
   "functions": {
+    "api/notion-save.js": {
+      "maxDuration": 30
+    },
     "api/gemini.js": {
       "maxDuration": 60
     },
@@ -7,6 +10,9 @@
       "maxDuration": 30
     },
     "api/slack-notify.js": {
+      "maxDuration": 30
+    },
+    "api/notion-save.js": {
       "maxDuration": 30
     },
     "api/notion-search.js": {

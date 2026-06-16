@@ -160,9 +160,8 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
   <div class="gen-card">
     <h2>Generate Merchant Brief</h2>
     <p class="gen-subtitle">Live Salesforce · Notion product releases · AI synthesis</p>
-    <div class="form-row">
-      <div class="field"><label>Merchant Name</label><input id="merchant" placeholder="e.g. The Strangers Club" /></div>
-      <div class="field"><label>Account Manager</label><input id="am" value="Vaughn Kent-Brown" /></div>
+    <div class="form-row" style="grid-template-columns: 1fr auto;">
+      <div class="field"><label>Merchant Name</label><input id="merchant" placeholder="e.g. Wildsprout, Strangers Club..." /></div>
       <button class="btn-primary" onclick="generate()">Generate Brief</button>
     </div>
     <div class="group-row">
@@ -211,6 +210,12 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
         <div class="metrics" id="sfMetrics"></div>
         <div class="info-grid" id="sfDetails"></div>
         <div id="sfTasks"></div>
+      </div>
+
+      <!-- 1b. Open & Overdue Tasks -->
+      <div class="section" id="tasksSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Tasks <span class="live-tag">Live · Salesforce</span></div>
+        <div id="tasksContent"></div>
       </div>
 
       <!-- 2. Contacts -->
@@ -342,7 +347,7 @@ function renderSF(sf) {
     <div class="metric">
       <div class="mlabel">Billing Package</div>
       <div class="mval" style="font-size:15px">${sf.billingPackage || '—'}</div>
-      ${sf.transactionRate ? `<div class="msub">Rate: ${sf.transactionRate}</div>` : ''}
+      ${sf.transactionRate ? `<div class="msub" style="color:#D97706;font-weight:600">Rate: ${sf.transactionRate}</div>` : '<div class="msub">Rate: not on SF</div>'}
     </div>
     <div class="metric">
       <div class="mlabel">Key Account</div>
@@ -371,22 +376,35 @@ function renderSF(sf) {
     </div>`;
 
   // Open tasks
-  if (sf.openTasks?.length) {
-    const sfBase = sf.sfInstance || 'https://yoco.lightning.force.com';
-    document.getElementById('sfTasks').innerHTML = `
-      <div style="margin-top:16px">
-        <p style="font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Open Tasks (${sf.openTasks.length})</p>
-        ${sf.openTasks.map(t => `
-          <div class="task-row">
-            <div>
-              ${t.id ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>`
-                     : `<p style="font-size:13px;font-weight:600">${t.subject}</p>`}
-              <p style="font-size:11px;color:#888;margin-top:2px">${t.status} · Due ${t.dueDate || '—'}</p>
-            </div>
-            <span style="font-size:11px;font-weight:600;color:${t.priority==='High'?'#DC2626':t.priority==='Normal'?'#D97706':'#888'}">${t.priority || ''}</span>
-          </div>`).join('')}
-      </div>`;
-  }
+  // tasks rendered by renderTasks()
+}
+
+function renderTasks(sf) {
+  const sec = document.getElementById('tasksSection');
+  const con = document.getElementById('tasksContent');
+  const tasks = sf.openTasks || [];
+  if (!tasks.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  const sfBase = sf.sfInstance || 'https://yoco.lightning.force.com';
+  const today = new Date();
+
+  con.innerHTML = tasks.map(t => {
+    const due = t.dueDate ? new Date(t.dueDate) : null;
+    const isOverdue = due && due < today;
+    const isDueSoon = due && !isOverdue && (due - today) <= 7*24*60*60*1000;
+    return `
+    <div class="task-row" style="border-left:3px solid ${isOverdue?'#DC2626':isDueSoon?'#F59E0B':'#E5E4E0'};padding-left:12px;margin-bottom:4px">
+      <div style="flex:1">
+        ${t.id ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>`
+               : `<p style="font-size:13px;font-weight:600">${t.subject}</p>`}
+        <p style="font-size:11px;color:${isOverdue?'#DC2626':isDueSoon?'#D97706':'#888'};margin-top:2px">
+          ${isOverdue ? '🚨 Overdue' : isDueSoon ? '⏰ Due soon' : t.status} · Due ${t.dueDate || '—'}
+        </p>
+      </div>
+      <span style="font-size:11px;font-weight:600;color:${t.priority==='High'?'#DC2626':'#D97706'}">${t.priority||''}</span>
+    </div>`;
+  }).join('');
 }
 
 function renderProducts(sf) {
@@ -432,13 +450,13 @@ function renderOpportunities(sf) {
   sec.style.display = 'block';
 
   const stageColor = {
-    'New': '#6B7280', 'Prospecting': '#6B7280', 'Qualification': '#2563EB',
+    'New': '#2563EB', 'Prospecting': '#6B7280', 'Qualification': '#2563EB',
     'Needs Analysis': '#2563EB', 'Value Proposition': '#D97706',
     'Proposal/Price Quote': '#D97706', 'Negotiation/Review': '#F59E0B',
     'Closed Won': '#16A34A', 'Closed Lost': '#DC2626'
   };
   const stageBg = {
-    'New': '#F3F4F6', 'Prospecting': '#F3F4F6', 'Qualification': '#EFF6FF',
+    'New': '#EFF6FF', 'Prospecting': '#F3F4F6', 'Qualification': '#EFF6FF',
     'Needs Analysis': '#EFF6FF', 'Value Proposition': '#FEF3C7',
     'Proposal/Price Quote': '#FEF3C7', 'Negotiation/Review': '#FEF9C3',
     'Closed Won': '#DCFCE7', 'Closed Lost': '#FEF2F2'
@@ -473,7 +491,7 @@ function renderOpportunities(sf) {
       <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:${o.description||o.nextStep?'8px':'0'}">
         ${o.type ? `<span style="font-size:12px;color:#888">Type: <strong style="color:#1a1a1a">${o.type}</strong></span>` : ''}
         ${o.leadSource ? `<span style="font-size:12px;color:#888">Source: <strong style="color:#1a1a1a">${o.leadSource}</strong></span>` : ''}
-        ${o.probability !== null ? `<span style="font-size:12px;color:#888">Probability: <strong style="color:#1a1a1a">${o.probability}%</strong></span>` : ''}
+        ${(o.probability !== null && o.probability !== undefined) ? `<span style="font-size:12px;color:#888">Probability: <strong style="color:#1a1a1a">${o.probability}%</strong></span>` : ''}
         ${o.owner ? `<span style="font-size:12px;color:#888">Owner: <strong style="color:#1a1a1a">${o.owner}</strong></span>` : ''}
         ${o.closeDate ? `<span style="font-size:12px;color:${isOverdue?'#DC2626':'#888'}">Close: <strong>${o.closeDate}${isOverdue?' ⚠️ Overdue':''}</strong></span>` : ''}
       </div>
@@ -730,8 +748,8 @@ function selectAccount(accountId, merchant, am) {
 // --- MAIN GENERATE ---
 async function generate() {
   const merchant = document.getElementById('merchant').value.trim();
-  const am = document.getElementById('am').value.trim();
   if (!merchant) { alert('Enter a merchant name'); return; }
+  const am = '—'; // will be replaced by SF owner after load
 
   _sf = null;
   document.getElementById('subAccountsSection').style.display = 'none';
@@ -740,7 +758,7 @@ async function generate() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('errBox').style.display = 'none';
   document.getElementById('sfContacts').innerHTML = '';
-  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection','opportunitiesSection'].forEach(id => {
+  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection','opportunitiesSection','tasksSection'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -773,9 +791,12 @@ async function generate() {
 
       if (r.ok && sfData.found) {
         _sf = sfData;
+        const owner = sfData.keyAccountManager || sfData.owner || '—';
         dot('dot-sf','live');
         document.getElementById('sf-status').textContent = 'Live';
+        document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${owner}`;
         renderSF(sfData);
+        renderTasks(sfData);
         renderProducts(sfData);
         renderOpportunities(sfData);
         renderCapital(sfData);
@@ -785,6 +806,10 @@ async function generate() {
         if (sfData.isGroupAccount) renderSubAccounts(sfData.childAccounts || []);
         renderIndustryInsights(sfData.industry);
         activateBtns();
+
+        // Slack notify the account owner
+        const amName = sfData.keyAccountManager || sfData.owner || '';
+        fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName, merchant}) }).catch(()=>{});
       } else {
         dot('dot-sf','error');
         document.getElementById('sf-status').textContent = sfData.found === false ? 'Not found' : 'Error';
@@ -826,9 +851,6 @@ RECOMMENDED APPROACH: [1 sentence]`;
     document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${am}`;
     window._chosenAccountId = null;
 
-    // Slack notify
-    fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName:am, merchant}) }).catch(()=>{});
-
   } catch(err) {
     clearInterval(_timer);
     document.getElementById('loading').style.display = 'none';
@@ -839,21 +861,20 @@ RECOMMENDED APPROACH: [1 sentence]`;
 
 async function saveToNotion() {
   const merchant = document.getElementById('merchant').value.trim();
-  const am = document.getElementById('am').value.trim();
+  const am = _sf?.keyAccountManager || _sf?.owner || 'Unknown';
   const ai = document.getElementById('aiContent').textContent;
   const content = ai || `Merchant: ${merchant}\nAM: ${am}\nGenerated: ${new Date().toLocaleString('en-ZA')}`;
   if (!merchant) { alert('No merchant loaded'); return; }
   const btn = document.getElementById('saveBtn');
   btn.textContent = 'Saving...'; btn.disabled = true;
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:300,
-        mcp_servers:[{type:'url',url:'https://mcp.notion.com/mcp',name:'notion'}],
-        messages:[{role:'user',content:`Create a page in Notion database 351ba43eb13580d5afcaf5f69d9bda5d titled "${merchant}" with this content: ${content}`}]
-      })
+    const r = await fetch('/api/notion-save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchant, content })
     });
-    btn.textContent = r.ok ? '✓ Saved' : 'Error';
+    const data = await r.json();
+    btn.textContent = r.ok ? '✓ Saved' : 'Error: ' + (data.error || 'Failed');
   } catch(e) { btn.textContent = 'Error'; }
   setTimeout(() => { btn.textContent = 'Save to Notion'; btn.disabled = false; }, 3000);
 }
