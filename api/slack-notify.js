@@ -18,7 +18,9 @@ export default async function handler(req, res) {
     'melissa barnes': process.env.SLACK_USER_ID_MELISSA || '',
     'lebohang mdakane': process.env.SLACK_USER_ID_LEBO || '',
     'nomahlubi madikgetla': process.env.SLACK_USER_ID_NOMAHLUBI || '',
-    'katlego ramasodi': process.env.SLACK_USER_ID_KATLEGO || ''
+    'katlego ramasodi': process.env.SLACK_USER_ID_KATLEGO || '',
+    'kylé steyn': process.env.SLACK_USER_ID_KYLE || '',
+    'kyle steyn': process.env.SLACK_USER_ID_KYLE || ''
   };
 
   const userId = AM_IDS[amName.toLowerCase()];

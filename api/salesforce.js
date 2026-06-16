@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
- 
+
   const { merchant, accountId, groupAccount } = req.body;
   if (!merchant) return res.status(400).json({ error: 'Merchant name required' });
 
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     // Step 1 — find accounts
     const safeMerchant = merchant.replace(/'/g, "\\'").trim();
     const searchQuery = (term) => query(
-      `SELECT Id, Name, Industry, Type, Phone, BillingCity, BillingCountry, Owner.Name, CreatedDate, LastModifiedDate
+      `SELECT Id, Name, Industry, Type, Phone, BillingCity, BillingCountry, Owner.Name, Key_Account_Manager__r.Name, CreatedDate, LastModifiedDate
        FROM Account WHERE Name LIKE '%${term}%'
        ORDER BY LastModifiedDate DESC LIMIT 10`
     );
@@ -199,7 +199,7 @@ export default async function handler(req, res) {
       found: true,
       id: a.Id, name: a.Name, industry: a.Industry, type: a.Type,
       phone: a.Phone, city: a.BillingCity, country: a.BillingCountry,
-      owner: a.Owner?.Name, createdDate: a.CreatedDate,
+      owner: a.Owner?.Name, keyAccountManager: a.Key_Account_Manager__r?.Name || null, createdDate: a.CreatedDate,
       sfUrl: `${sfInstance}/${a.Id}`,
       sfInstance,
       // Custom fields
