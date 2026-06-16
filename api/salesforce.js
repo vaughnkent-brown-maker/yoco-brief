@@ -152,6 +152,17 @@ export default async function handler(req, res) {
     const segmentKey = find(['segment']) || find(['merchant_type']);
     const npsKey = find(['nps']);
     const healthKey = find(['health']);
+    // Intercom keys
+    const intercomIdKey = find(['intercom', 'id']) || find(['intercom']);
+    const intercomConvKey = find(['intercom', 'conv']) || find(['intercom', 'ticket']) || find(['intercom', 'open']);
+    const intercomHealthKey = find(['intercom', 'health']) || find(['intercom', 'score']);
+    const intercomLastKey = find(['intercom', 'last']) || find(['intercom', 'recent']);
+    const intercomTagsKey = find(['intercom', 'tag']);
+    const intercomCsatKey = find(['intercom', 'csat']) || find(['intercom', 'satisf']);
+    const intercomSegKey = find(['intercom', 'segment']) || find(['intercom', 'plan']);
+    const supportRatingKey = find(['support', 'rating']) || find(['support', 'score']) || find(['csat']);
+    const openTicketsKey = find(['open', 'ticket']) || find(['support', 'ticket']);
+    const totalConvsKey = find(['total', 'conv']) || find(['lifetime', 'conv']);
 
     const previousTasks = (prevTasksData.records || []).map(t => ({
       id: t.Id, subject: t.Subject, description: t.Description || '',
