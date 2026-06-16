@@ -432,29 +432,55 @@ function renderOpportunities(sf) {
   sec.style.display = 'block';
 
   const stageColor = {
-    'Prospecting': '#6B7280', 'Qualification': '#2563EB', 'Needs Analysis': '#2563EB',
-    'Value Proposition': '#D97706', 'Proposal/Price Quote': '#D97706',
-    'Negotiation/Review': '#F59E0B', 'Closed Won': '#16A34A', 'Closed Lost': '#DC2626'
+    'New': '#6B7280', 'Prospecting': '#6B7280', 'Qualification': '#2563EB',
+    'Needs Analysis': '#2563EB', 'Value Proposition': '#D97706',
+    'Proposal/Price Quote': '#D97706', 'Negotiation/Review': '#F59E0B',
+    'Closed Won': '#16A34A', 'Closed Lost': '#DC2626'
+  };
+  const stageBg = {
+    'New': '#F3F4F6', 'Prospecting': '#F3F4F6', 'Qualification': '#EFF6FF',
+    'Needs Analysis': '#EFF6FF', 'Value Proposition': '#FEF3C7',
+    'Proposal/Price Quote': '#FEF3C7', 'Negotiation/Review': '#FEF9C3',
+    'Closed Won': '#DCFCE7', 'Closed Lost': '#FEF2F2'
   };
 
-  con.innerHTML = opps.map(o => `
-    <div style="border:1px solid #E5E4E0;border-radius:10px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+  // Outstanding tasks banner
+  const overdue = (sf.openTasks || []).filter(t => t.dueDate && new Date(t.dueDate) < new Date());
+  const dueSoon = (sf.openTasks || []).filter(t => t.dueDate && new Date(t.dueDate) >= new Date() && new Date(t.dueDate) <= new Date(Date.now() + 7*24*60*60*1000));
+
+  const bannerHtml = overdue.length ? `
+    <div class="banner banner-alert" style="margin-bottom:12px">
+      🚨 <strong>${overdue.length} overdue task${overdue.length>1?'s':''}</strong>: ${overdue.map(t=>t.subject).join(', ')}
+    </div>` : dueSoon.length ? `
+    <div class="banner banner-warn" style="margin-bottom:12px">
+      ⏰ <strong>${dueSoon.length} task${dueSoon.length>1?'s':''} due this week</strong>: ${dueSoon.map(t=>t.subject).join(', ')}
+    </div>` : '';
+
+  con.innerHTML = bannerHtml + opps.map(o => {
+    const isOverdue = o.closeDate && new Date(o.closeDate) < new Date();
+    return `
+    <div style="border:1px solid ${isOverdue?'#FECACA':'#E5E4E0'};border-radius:10px;padding:14px 16px;margin-bottom:8px;background:${isOverdue?'#FFF5F5':'#fff'}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
+        <div style="flex:1">
           ${o.sfUrl ? `<a href="${o.sfUrl}" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${o.name} ↗</a>`
                     : `<p style="font-size:14px;font-weight:700">${o.name}</p>`}
         </div>
-        ${o.description ? `<p style="font-size:12px;color:#666;line-height:1.5;margin-bottom:6px">${o.description.slice(0,200)}${o.description.length>200?'...':''}</p>` : ''}
-        <div style="display:flex;gap:16px;flex-wrap:wrap">
-          ${o.owner ? `<span style="font-size:12px;color:#888">Owner: <strong style="color:#1a1a1a">${o.owner}</strong></span>` : ''}
-          ${o.closeDate ? `<span style="font-size:12px;color:#888">Close: <strong style="color:#1a1a1a">${o.closeDate}</strong></span>` : ''}
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          ${o.amount ? `<p style="font-size:15px;font-weight:700">${fmt(o.amount)}</p>` : ''}
+          ${o.stage ? `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;background:${stageBg[o.stage]||'#F3F4F6'};color:${stageColor[o.stage]||'#6B7280'}">${o.stage}</span>` : ''}
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
-        ${o.amount ? `<p style="font-size:15px;font-weight:700">${fmt(o.amount)}</p>` : ''}
-        ${o.stage ? `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;background:#F3F4F6;color:${stageColor[o.stage]||'#6B7280'}">${o.stage}</span>` : ''}
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:${o.description||o.nextStep?'8px':'0'}">
+        ${o.type ? `<span style="font-size:12px;color:#888">Type: <strong style="color:#1a1a1a">${o.type}</strong></span>` : ''}
+        ${o.leadSource ? `<span style="font-size:12px;color:#888">Source: <strong style="color:#1a1a1a">${o.leadSource}</strong></span>` : ''}
+        ${o.probability !== null ? `<span style="font-size:12px;color:#888">Probability: <strong style="color:#1a1a1a">${o.probability}%</strong></span>` : ''}
+        ${o.owner ? `<span style="font-size:12px;color:#888">Owner: <strong style="color:#1a1a1a">${o.owner}</strong></span>` : ''}
+        ${o.closeDate ? `<span style="font-size:12px;color:${isOverdue?'#DC2626':'#888'}">Close: <strong>${o.closeDate}${isOverdue?' ⚠️ Overdue':''}</strong></span>` : ''}
       </div>
-    </div>`).join('');
+      ${o.nextStep ? `<p style="font-size:12px;background:#F0FDF4;border-radius:6px;padding:7px 10px;color:#15803D"><strong>Next step:</strong> ${o.nextStep}</p>` : ''}
+      ${o.description ? `<p style="font-size:12px;color:#666;line-height:1.5;margin-top:6px">${o.description.slice(0,200)}${o.description.length>200?'...':''}</p>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function renderCapital(sf) {
