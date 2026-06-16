@@ -151,6 +151,21 @@
       <div id="subAccountsContent"></div>
     </div>
 
+    <div class="section" id="capitalSection" style="display:none">
+      <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Yoco Capital <span class="live-tag">Live · Salesforce</span></div>
+      <div id="capitalContent"></div>
+    </div>
+
+    <div class="section" id="productsSection" style="display:none">
+      <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Product Usage <span class="live-tag">Live · Salesforce</span></div>
+      <div id="productsContent"></div>
+    </div>
+
+    <div class="section" id="industrySection" style="display:none">
+      <div class="slabel"><span class="sdot" style="background:#16A34A"></span>Industry Intelligence</div>
+      <div id="industryContent"></div>
+    </div>
+
     <div class="section" id="relSection"  style="display:none">
       <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Upcoming Releases — Relevant to this merchant <span class="live-tag">Notion</span></div>
       <div id="relContent"></div>
@@ -563,7 +578,7 @@ async function generate() {
   document.getElementById('briefOutput').style.display = 'block';
   document.getElementById('loading').style.display = 'block';
   document.getElementById('errBox').style.display = 'none';
-  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection'].forEach(id => document.getElementById(id).style.display = 'none');
+  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
   document.getElementById('briefTitle').textContent = merchant;
   document.getElementById('briefMeta').textContent = `Generating... · AM: ${am}`;
   dot('dot-sf','loading'); dot('dot-rel','loading'); dot('dot-ai','loading');
