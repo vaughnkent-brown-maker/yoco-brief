@@ -151,11 +151,6 @@
       <div id="subAccountsContent"></div>
     </div>
 
-    <div class="section" id="capitalSection" style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Yoco Capital <span class="live-tag">Live · Salesforce</span></div>
-      <div id="capitalContent"></div>
-    </div>
-
     <div class="section" id="productsSection" style="display:none">
       <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Product Usage <span class="live-tag">Live · Salesforce</span></div>
       <div id="productsContent"></div>
@@ -164,6 +159,11 @@
     <div class="section" id="industrySection" style="display:none">
       <div class="slabel"><span class="sdot" style="background:#16A34A"></span>Industry Intelligence</div>
       <div id="industryContent"></div>
+    </div>
+
+    <div class="section" id="intercomSection" style="display:none">
+      <div class="slabel"><span class="sdot" style="background:#FF6B6B"></span>Support & Intercom <span class="live-tag">Live · Salesforce</span></div>
+      <div id="intercomContent"></div>
     </div>
 
     <div class="section" id="relSection"  style="display:none">
@@ -382,7 +382,7 @@ function renderContacts(contacts) {
         ${contacts.map(c => {
           const mobile = c.mobile || c.phone;
           const waNumber = formatWhatsApp(mobile);
-          const waUrl = `https://wa.me/${waNumber}`;
+          const waUrl = `https://web.whatsapp.com/send?phone=${waNumber}`;
           return `
           <div style="border:1px solid #E5E4E0;border-radius:10px;padding:12px 14px;background:#fff">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
@@ -500,29 +500,39 @@ function renderProducts(sf) {
   const con = document.getElementById('productsContent');
   sec.style.display = 'block';
 
-  const items = [
-    { label: 'Billing Plan', value: sf.billingPackage, icon: '📋' },
-    { label: 'Terminals / Devices', value: sf.terminalCount, icon: '💳' },
-    { label: 'Yoco Gateway (eCommerce)', value: sf.hasGateway === true ? 'Active' : sf.hasGateway === false ? 'Not active' : sf.hasGateway, icon: '🌐' },
-    { label: 'Yoco Savings', value: sf.hasSavings === true ? 'Active' : sf.hasSavings === false ? 'Not active' : sf.hasSavings, icon: '💰' },
-    { label: 'Last Transaction', value: sf.lastTransaction ? new Date(sf.lastTransaction).toLocaleDateString('en-ZA') : null, icon: '🕐' },
-    { label: 'Risk Flag', value: sf.riskFlag, icon: '⚠️' },
-    { label: 'Merchant Segment', value: sf.segment, icon: '🏷️' },
-    { label: 'NPS Score', value: sf.nps, icon: '⭐' },
-  ].filter(i => i.value !== null && i.value !== undefined && i.value !== '');
-
-  if (!items.length) {
-    con.innerHTML = '<p style="font-size:13px;color:#888">Product usage data not available — check Salesforce directly.</p>';
-    return;
+  // Format gateway value — if it's a number it's probably a volume not a boolean
+  let gatewayVal = null;
+  if (sf.hasGateway !== null && sf.hasGateway !== undefined) {
+    if (typeof sf.hasGateway === 'boolean') gatewayVal = sf.hasGateway ? 'Active' : 'Not active';
+    else if (typeof sf.hasGateway === 'number') gatewayVal = sf.hasGateway > 0 ? `Active (R${Number(sf.hasGateway).toLocaleString()})` : 'Not active';
+    else gatewayVal = sf.hasGateway;
   }
 
-  con.innerHTML = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0">
-    ${items.map(i => `
-      <div class="ir">
-        <span class="il">${i.icon} ${i.label}</span>
-        <span class="iv">${i.value}</span>
-      </div>`).join('')}
-  </div>`;
+  let savingsVal = null;
+  if (sf.hasSavings !== null && sf.hasSavings !== undefined) {
+    if (typeof sf.hasSavings === 'boolean') savingsVal = sf.hasSavings ? 'Active' : 'Not active';
+    else savingsVal = sf.hasSavings;
+  }
+
+  // Product pills
+  const products = [
+    { label: 'Billing Plan', value: sf.billingPackage, color: '#DBEAFE', text: '#1D4ED8' },
+    { label: 'Terminals', value: sf.terminalCount ? `${sf.terminalCount} device${sf.terminalCount > 1 ? 's' : ''}` : null, color: '#DCFCE7', text: '#16A34A' },
+    { label: 'Yoco Gateway', value: gatewayVal, color: gatewayVal?.includes('Active') ? '#DCFCE7' : '#F3F4F6', text: gatewayVal?.includes('Active') ? '#16A34A' : '#6B7280' },
+    { label: 'Yoco Savings', value: savingsVal, color: savingsVal === 'Active' ? '#DCFCE7' : '#F3F4F6', text: savingsVal === 'Active' ? '#16A34A' : '#6B7280' },
+    { label: 'Segment', value: sf.segment, color: '#F5F3FF', text: '#7C3AED' },
+  ].filter(p => p.value !== null && p.value !== undefined && p.value !== '');
+
+  const pillsHtml = products.length ? `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      ${products.map(p => `
+        <div style="background:${p.color};border-radius:8px;padding:8px 14px">
+          <p style="font-size:10px;font-weight:600;color:${p.text};text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px">${p.label}</p>
+          <p style="font-size:13px;font-weight:700;color:${p.text}">${p.value}</p>
+        </div>`).join('')}
+    </div>` : '';
+
+  con.innerHTML = pillsHtml || '<p style="font-size:13px;color:#888">Product usage data not available.</p>';
 }
 
 function renderIndustryInsights(industry) {
@@ -566,6 +576,100 @@ function renderIndustryInsights(industry) {
     </div>`;
 }
 
+function renderIntercom(sf) {
+  const sec = document.getElementById('intercomSection');
+  const con = document.getElementById('intercomContent');
+
+  const hasCases = sf.cases?.length > 0;
+  const hasIntercomFields = sf.intercomOpenConvs !== null || sf.intercomHealth !== null ||
+    sf.intercomLastContact !== null || sf.openTickets !== null || sf.supportRating !== null;
+
+  if (!hasCases && !hasIntercomFields) {
+    sec.style.display = 'none';
+    return;
+  }
+
+  sec.style.display = 'block';
+
+  // Cases summary
+  const openCases = (sf.cases || []).filter(c => !['Closed','Resolved'].includes(c.status));
+  const closedCases = (sf.cases || []).filter(c => ['Closed','Resolved'].includes(c.status));
+
+  // AI-style summary of cases
+  const topIssues = {};
+  (sf.cases || []).forEach(c => {
+    const subject = (c.subject || '').toLowerCase();
+    if (subject.includes('payment') || subject.includes('transaction')) topIssues['Payment issues'] = (topIssues['Payment issues']||0)+1;
+    else if (subject.includes('terminal') || subject.includes('device') || subject.includes('hardware')) topIssues['Hardware/Terminal'] = (topIssues['Hardware/Terminal']||0)+1;
+    else if (subject.includes('app') || subject.includes('software')) topIssues['App issues'] = (topIssues['App issues']||0)+1;
+    else if (subject.includes('payout') || subject.includes('settlement')) topIssues['Payout/Settlement'] = (topIssues['Payout/Settlement']||0)+1;
+    else if (subject.includes('account') || subject.includes('login')) topIssues['Account access'] = (topIssues['Account access']||0)+1;
+    else topIssues['Other'] = (topIssues['Other']||0)+1;
+  });
+
+  const issuesSummary = Object.entries(topIssues)
+    .sort((a,b) => b[1]-a[1])
+    .map(([k,v]) => `${k} (${v})`)
+    .join(', ');
+
+  const priorityColor = { 'High': '#DC2626', 'Medium': '#D97706', 'Low': '#16A34A', 'Critical': '#7C3AED' };
+  const statusBg = { 'Open': '#FEF2F2', 'New': '#FEF2F2', 'In Progress': '#FEF3C7', 'Closed': '#F3F4F6', 'Resolved': '#DCFCE7' };
+  const statusColor = { 'Open': '#DC2626', 'New': '#DC2626', 'In Progress': '#D97706', 'Closed': '#6B7280', 'Resolved': '#16A34A' };
+
+  con.innerHTML = `
+    <!-- Summary metrics -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+      <div class="metric">
+        <div class="mlabel">Open Cases</div>
+        <div class="mval" style="color:${openCases.length > 0 ? '#DC2626' : '#16A34A'}">${openCases.length}</div>
+        <div class="msub">of ${sf.cases?.length||0} total</div>
+      </div>
+      <div class="metric">
+        <div class="mlabel">Resolved</div>
+        <div class="mval">${closedCases.length}</div>
+        <div class="msub">cases closed</div>
+      </div>
+      ${sf.supportRating ? `<div class="metric">
+        <div class="mlabel">Support Rating</div>
+        <div class="mval">${sf.supportRating}</div>
+      </div>` : ''}
+      ${sf.intercomCsat ? `<div class="metric">
+        <div class="mlabel">CSAT Score</div>
+        <div class="mval">${sf.intercomCsat}</div>
+      </div>` : ''}
+    </div>
+
+    <!-- Issue summary -->
+    ${issuesSummary ? `
+    <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#92400E">
+      <strong>Most common issues:</strong> ${issuesSummary}
+    </div>` : ''}
+
+    ${sf.intercomLastContact ? `
+    <div style="font-size:12px;color:#888;margin-bottom:12px">Last Intercom contact: <strong style="color:#1a1a1a">${sf.intercomLastContact}</strong></div>` : ''}
+
+    <!-- Case list -->
+    ${sf.cases?.length ? `
+    <div>
+      ${sf.cases.slice(0,8).map(c => `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F0EFE9;gap:12px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              <span style="font-size:10px;color:#888">#${c.caseNumber||c.id.slice(-6)}</span>
+              ${c.origin ? `<span style="font-size:10px;color:#888">· ${c.origin}</span>` : ''}
+            </div>
+            <p style="font-size:13px;font-weight:600">${c.subject||'No subject'}</p>
+            ${c.description ? `<p style="font-size:12px;color:#666;margin-top:2px;line-height:1.4">${c.description.slice(0,120)}${c.description.length>120?'...':''}</p>` : ''}
+            <p style="font-size:11px;color:#aaa;margin-top:3px">${c.created||''} ${c.closed ? '→ closed '+c.closed : ''}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+            <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:${statusBg[c.status]||'#F3F4F6'};color:${statusColor[c.status]||'#6B7280'}">${c.status}</span>
+            ${c.priority && c.priority !== 'Medium' ? `<span style="font-size:10px;font-weight:600;color:${priorityColor[c.priority]||'#888'}">${c.priority}</span>` : ''}
+          </div>
+        </div>`).join('')}
+    </div>` : ''}`;
+}
+
 async function generate() {
   const merchant = document.getElementById('merchant').value.trim();
   const am = document.getElementById('am').value.trim();
@@ -578,7 +682,7 @@ async function generate() {
   document.getElementById('briefOutput').style.display = 'block';
   document.getElementById('loading').style.display = 'block';
   document.getElementById('errBox').style.display = 'none';
-  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
   document.getElementById('briefTitle').textContent = merchant;
   document.getElementById('briefMeta').textContent = `Generating... · AM: ${am}`;
   dot('dot-sf','loading'); dot('dot-rel','loading'); dot('dot-ai','loading');
@@ -614,9 +718,9 @@ async function generate() {
         renderPreviousTasks(sfData.previousTasks);
         renderContacts(sfData.contacts);
         if (sfData.isGroupAccount) renderSubAccounts(sfData.childAccounts || []);
-        renderCapital(sfData);
         renderProducts(sfData);
         renderIndustryInsights(sfData.industry);
+        renderIntercom(sfData);
         activateBtns();
       } else {
         dot('dot-sf','error');
@@ -634,7 +738,7 @@ async function generate() {
     const prompt = `You are an Account Manager at Yoco preparing for a merchant meeting with "${merchant}".
 
 SALESFORCE DATA:
-${sfData?.found ? `Industry: ${sfData.industry||'Unknown'} | Billing: ${sfData.billingPackage||'Unknown'} | Type: ${sfData.type||'Unknown'} | Location: ${sfData.city||''} ${sfData.country||''} | Key Account: ${sfData.isKeyAccount?'Yes':'No'} | Owner: ${sfData.owner||'Unknown'} | 30-Day TPV: ${sfData.tpv30Day?'R'+Number(sfData.tpv30Day).toLocaleString():'Unknown'} | Volume this month: ${sfData.volumeThisMonth?'R'+Number(sfData.volumeThisMonth).toLocaleString():'Unknown'} | Fully onboarded: ${sfData.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData.openDeals||0} | On Yoco since: ${sfData.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData.openTasks?.map(t=>t.subject).join(', ')||'None'} | Capital status: ${sfData.capitalStatus||'Unknown'} | Capital taken: ${sfData.capitalTaken?'R'+Number(sfData.capitalTaken).toLocaleString():'None'} | Capital balance: ${sfData.capitalBalance?'R'+Number(sfData.capitalBalance).toLocaleString():'None'} | Capital eligible: ${sfData.capitalEligible?'Yes':'Unknown'} | Terminals: ${sfData.terminalCount||'Unknown'} | Has gateway: ${sfData.hasGateway||'Unknown'} | Has savings: ${sfData.hasSavings||'Unknown'} | Previous activity: ${sfData.previousTasks?.map(t=>t.subject+(t.description?' — '+t.description.slice(0,60):'')).join(' | ')||'None'}${sfData.isGroupAccount && sfData.childAccounts?.length ? ` | GROUP ACCOUNT with ${sfData.childAccounts.length} sub-accounts: ${sfData.childAccounts.map(c=>c.name+(c.billingPackage?' ('+c.billingPackage+')':'')).join(', ')}` : ''}` : 'Not available'}
+${sfData?.found ? `Industry: ${sfData.industry||'Unknown'} | Billing: ${sfData.billingPackage||'Unknown'} | Type: ${sfData.type||'Unknown'} | Location: ${sfData.city||''} ${sfData.country||''} | Key Account: ${sfData.isKeyAccount?'Yes':'No'} | Owner: ${sfData.owner||'Unknown'} | 30-Day TPV: ${sfData.tpv30Day?'R'+Number(sfData.tpv30Day).toLocaleString():'Unknown'} | Volume this month: ${sfData.volumeThisMonth?'R'+Number(sfData.volumeThisMonth).toLocaleString():'Unknown'} | Fully onboarded: ${sfData.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData.openDeals||0} | On Yoco since: ${sfData.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData.openTasks?.map(t=>t.subject).join(', ')||'None'} | Support cases: ${sfData.cases?.length||0} total, ${(sfData.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open | Recent cases: ${(sfData.cases||[]).slice(0,3).map(c=>c.subject).join(', ')||'None'} | Capital status: ${sfData.capitalStatus||'Unknown'} | Capital taken: ${sfData.capitalTaken?'R'+Number(sfData.capitalTaken).toLocaleString():'None'} | Capital balance: ${sfData.capitalBalance?'R'+Number(sfData.capitalBalance).toLocaleString():'None'} | Capital eligible: ${sfData.capitalEligible?'Yes':'Unknown'} | Terminals: ${sfData.terminalCount||'Unknown'} | Has gateway: ${sfData.hasGateway||'Unknown'} | Has savings: ${sfData.hasSavings||'Unknown'} | Previous activity: ${sfData.previousTasks?.map(t=>t.subject+(t.description?' — '+t.description.slice(0,60):'')).join(' | ')||'None'}${sfData.isGroupAccount && sfData.childAccounts?.length ? ` | GROUP ACCOUNT with ${sfData.childAccounts.length} sub-accounts: ${sfData.childAccounts.map(c=>c.name+(c.billingPackage?' ('+c.billingPackage+')':'')).join(', ')}` : ''}` : 'Not available'}
 
 RELEVANT PRODUCT RELEASES:
 ${relevant.slice(0,3).map(r=>`- ${r.name}: ${r.talking_point}`).join('\n')}

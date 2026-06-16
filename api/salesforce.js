@@ -84,7 +84,7 @@ export default async function handler(req, res) {
     const a = accountId ? (records.find(r => r.Id === accountId) || records[0]) : records[0];
 
     // Step 2 — run all secondary queries IN PARALLEL
-    const [customData, prevTasksData, openTasksData, contactsData] = await Promise.all([
+    const [customData, prevTasksData, openTasksData, contactsData, oppsData, casesData] = await Promise.all([
       getRecord(a.Id),
       query(`SELECT Id, Subject, Description, Status, Priority, ActivityDate, CreatedDate, Owner.Name
              FROM Task WHERE WhatId = '${a.Id}' AND IsClosed = true
@@ -94,7 +94,13 @@ export default async function handler(req, res) {
              ORDER BY ActivityDate ASC LIMIT 5`),
       query(`SELECT Id, FirstName, LastName, Title, Phone, MobilePhone, Email
              FROM Contact WHERE AccountId = '${a.Id}'
-             ORDER BY CreatedDate ASC LIMIT 5`)
+             ORDER BY CreatedDate ASC LIMIT 5`),
+      query(`SELECT Id, Name, StageName, Amount, CloseDate, Owner.Name, Description
+             FROM Opportunity WHERE AccountId = '${a.Id}' AND IsClosed = false
+             ORDER BY CloseDate ASC LIMIT 5`),
+      query(`SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, ClosedDate, Description, Origin
+             FROM Case WHERE AccountId = '${a.Id}'
+             ORDER BY CreatedDate DESC LIMIT 10`)
     ]);
 
     // Child accounts (only if group account requested)
@@ -177,6 +183,17 @@ export default async function handler(req, res) {
       isKeyAccount: keyAccKey ? d[keyAccKey] : false,
       nps: npsKey ? d[npsKey] : null,
       health: healthKey ? d[healthKey] : null,
+      // Intercom
+      intercomId: customFields.intercomId,
+      intercomOpenConvs: customFields.intercomOpenConvs,
+      intercomHealth: customFields.intercomHealth,
+      intercomLastContact: customFields.intercomLastContact,
+      intercomTags: customFields.intercomTags,
+      intercomCsat: customFields.intercomCsat,
+      intercomSegment: customFields.intercomSegment,
+      supportRating: customFields.supportRating,
+      openTickets: customFields.openTickets,
+      totalConvs: customFields.totalConvs,
       tpv30Day: d.X30_Day_TPV__c || null,
       openDeals: d.Open_deals__c || null,
       wonDeals: d.Won_deals__c || null,
@@ -198,6 +215,27 @@ export default async function handler(req, res) {
       segment: segmentKey ? d[segmentKey] : null,
       // Related data
       openTasks, previousTasks, contacts,
+      cases: (casesData.records || []).map(c => ({
+        id: c.Id,
+        caseNumber: c.CaseNumber,
+        subject: c.Subject,
+        status: c.Status,
+        priority: c.Priority,
+        origin: c.Origin,
+        created: c.CreatedDate?.split('T')[0],
+        closed: c.ClosedDate?.split('T')[0],
+        description: c.Description || ''
+      })),
+      opportunities: (oppsData.records || []).map(o => ({
+        id: o.Id,
+        name: o.Name,
+        stage: o.StageName,
+        amount: o.Amount,
+        closeDate: o.CloseDate,
+        owner: o.Owner?.Name,
+        description: o.Description || '',
+        sfUrl: `${sfInstance}/${o.Id}`
+      })),
       childAccounts, isGroupAccount: groupAccount || false,
       allCustom: allCustomKeys
     });
