@@ -222,7 +222,13 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
         <div id="productsContent"></div>
       </div>
 
-      <!-- 3. Capital -->
+      <!-- 3. Open Opportunities -->
+      <div class="section" id="opportunitiesSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Open Opportunities <span class="live-tag">Live · Salesforce</span></div>
+        <div id="opportunitiesContent"></div>
+      </div>
+
+      <!-- 4. Capital -->
       <div class="section" id="capitalSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Yoco Capital</div>
         <div id="capitalContent"></div>
@@ -416,6 +422,39 @@ function renderProducts(sf) {
           <div class="ppill-val" style="color:${p.color}">${p.value}</div>
         </div>`).join('')}</div>`
     : '<p style="font-size:13px;color:#888">Product usage data not available.</p>';
+}
+
+function renderOpportunities(sf) {
+  const sec = document.getElementById('opportunitiesSection');
+  const con = document.getElementById('opportunitiesContent');
+  const opps = sf.opportunities || [];
+  if (!opps.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  const stageColor = {
+    'Prospecting': '#6B7280', 'Qualification': '#2563EB', 'Needs Analysis': '#2563EB',
+    'Value Proposition': '#D97706', 'Proposal/Price Quote': '#D97706',
+    'Negotiation/Review': '#F59E0B', 'Closed Won': '#16A34A', 'Closed Lost': '#DC2626'
+  };
+
+  con.innerHTML = opps.map(o => `
+    <div style="border:1px solid #E5E4E0;border-radius:10px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          ${o.sfUrl ? `<a href="${o.sfUrl}" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${o.name} ↗</a>`
+                    : `<p style="font-size:14px;font-weight:700">${o.name}</p>`}
+        </div>
+        ${o.description ? `<p style="font-size:12px;color:#666;line-height:1.5;margin-bottom:6px">${o.description.slice(0,200)}${o.description.length>200?'...':''}</p>` : ''}
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          ${o.owner ? `<span style="font-size:12px;color:#888">Owner: <strong style="color:#1a1a1a">${o.owner}</strong></span>` : ''}
+          ${o.closeDate ? `<span style="font-size:12px;color:#888">Close: <strong style="color:#1a1a1a">${o.closeDate}</strong></span>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        ${o.amount ? `<p style="font-size:15px;font-weight:700">${fmt(o.amount)}</p>` : ''}
+        ${o.stage ? `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;background:#F3F4F6;color:${stageColor[o.stage]||'#6B7280'}">${o.stage}</span>` : ''}
+      </div>
+    </div>`).join('');
 }
 
 function renderCapital(sf) {
@@ -675,7 +714,7 @@ async function generate() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('errBox').style.display = 'none';
   document.getElementById('sfContacts').innerHTML = '';
-  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection'].forEach(id => {
+  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection','opportunitiesSection'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -712,6 +751,7 @@ async function generate() {
         document.getElementById('sf-status').textContent = 'Live';
         renderSF(sfData);
         renderProducts(sfData);
+        renderOpportunities(sfData);
         renderCapital(sfData);
         renderIntercom(sfData);
         renderPreviousTasks(sfData.previousTasks);
@@ -749,7 +789,7 @@ RECOMMENDED APPROACH: 1-2 sentences on how to frame this meeting.
 
 Only use what's in the data above. Be specific. Keep it tight.`;
 
-    const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:600}) });
+    const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:1000}) });
     if (ar.ok) {
       const ad = await ar.json();
       if (ad.text) {
@@ -789,7 +829,7 @@ async function saveToNotion() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:300,
         mcp_servers:[{type:'url',url:'https://mcp.notion.com/mcp',name:'notion'}],
-        messages:[{role:'user',content:`Create a page in Notion database 351ba43eb13580d5afcaf5f69d9bda5d titled "${merchant}" with this content: ${content.slice(0,600)}`}]
+        messages:[{role:'user',content:`Create a page in Notion database 351ba43eb13580d5afcaf5f69d9bda5d titled "${merchant}" with this content: ${content}`}]
       })
     });
     btn.textContent = r.ok ? '✓ Saved' : 'Error';
