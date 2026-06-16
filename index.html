@@ -159,6 +159,10 @@
     letter-spacing="-1">YOCO</text>
 </svg>
   <div class="badge">AM Brief Generator</div><div style="font-size:11px;background:rgba(66,133,244,0.2);color:#8AB4F8;padding:3px 10px;border-radius:20px;font-weight:500">Gemini 3.5 Flash</div>
+  <div style="display:flex;gap:8px;margin-left:8px">
+    <button onclick="openSalesforce()" id="sfHeaderBtn" style="height:28px;padding:0 12px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;opacity:0.4;pointer-events:none">Salesforce</button>
+    <button onclick="openYocoAdmin()" id="adminHeaderBtn" style="height:28px;padding:0 12px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.25);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;opacity:0.4;pointer-events:none">Yoco Admin</button>
+  </div>
 </div>
 
 <div class="main">
@@ -266,9 +270,9 @@
         <div class="brief-meta" id="briefMeta"></div>
       </div>
       <div class="brief-actions">
-        <button class="btn-secondary" onclick="copyBrief()">Copy brief</button>
         <button class="btn-secondary" id="saveNotionBtn" onclick="saveToNotion()" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">Save to Notion</button>
-        <button class="btn-secondary" onclick="resetForm()">New brief</button>
+        <button class="btn-secondary" id="sfLinkBtn" onclick="openSalesforce()" style="background:#00A1E0;color:#fff;border-color:#00A1E0">Salesforce</button>
+        <button class="btn-secondary" id="adminLinkBtn" onclick="openYocoAdmin()" style="background:#1a1a1a;color:#fff;border-color:#1a1a1a">Yoco Admin</button>
       </div>
     </div>
 
@@ -540,6 +544,10 @@ function startFresh() {
   document.getElementById('isGroupAccount').checked = false;
   document.getElementById('groupOptions').style.display = 'none';
   document.getElementById('groupSection').style.display = 'none';
+  ['sfHeaderBtn', 'adminHeaderBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) { btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none'; btn.style.borderColor = 'rgba(255,255,255,0.25)'; }
+  });
   setDot('dot-slack', '');
   setDot('dot-notion', '');
   if(document.getElementById('slack-status')) document.getElementById('slack-status').textContent = 'Ready';
@@ -1285,7 +1293,42 @@ async function generateBrief() {
   try {
     const isGroup = document.getElementById('isGroupAccount').checked;
     const d = getMockData(merchant);
+
+    // Try live Salesforce — silently fall back to mock if unavailable
+    try {
+      const sfRes = await fetch('/api/salesforce', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchant })
+      });
+      const sfData = await sfRes.json();
+      if (sfRes.ok && sfData.found) {
+        d.salesforce.tier = sfData.isKeyAccount ? 'Key Account' : 'Standard';
+        d.salesforce.segment = sfData.industry || d.salesforce.segment;
+        d.salesforce.onboarded = sfData.createdDate ? new Date(sfData.createdDate).toLocaleDateString('en-ZA') : d.salesforce.onboarded;
+        d.salesforce.billingPackage = sfData.billingPackage || d.salesforce.billingPackage;
+        d.salesforce.buuid = sfData.buuid || d.salesforce.buuid;
+        d.salesforce.crmUrl = sfData.sfUrl || d.salesforce.crmUrl;
+        d.salesforce.health = sfData.health || d.salesforce.health;
+        d.salesforce.nps = sfData.nps || d.salesforce.nps;
+        d.salesforce.owner = sfData.owner || d.salesforce.owner;
+        d.salesforce.openTasks = sfData.openTasks || d.salesforce.openTasks;
+        d.salesforce.opportunities = sfData.opportunities || [];
+        // Mark SF pill as live
+        document.querySelectorAll('.source-pill')[0].innerHTML = '<div class="source-dot active"></div><div><strong>Salesforce</strong>Live</div>';
+      }
+    } catch(e) {
+      console.log('SF proxy unavailable, using mock:', e.message);
+    }
+
     populate(merchant, am, d);
+    // Store for button access
+    window._currentBrief = { buuid: d.salesforce.buuid, sfUrl: d.salesforce.crmUrl };
+    // Enable header buttons
+    ['sfHeaderBtn', 'adminHeaderBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btn.style.borderColor = 'rgba(255,255,255,0.5)'; }
+    });
 
     // Populate multi-location section
     populateMultiLocation(d.salesforce.multiLocation);
@@ -1651,6 +1694,26 @@ async function sendSlackNotification(amName, merchant, briefUrl) {
   } catch(err) {
     // Silent fail — notification is non-critical
     console.log('Slack notify failed:', err.message);
+  }
+}
+
+function openSalesforce() {
+  const sfUrl = window._currentBrief && window._currentBrief.sfUrl;
+  if (sfUrl) {
+    window.open(sfUrl, '_blank');
+  } else {
+    const merchant = document.getElementById('briefTitle').textContent;
+    window.open('https://yoco.lightning.force.com/lightning/search?searchTerm=' + encodeURIComponent(merchant), '_blank');
+  }
+}
+
+function openYocoAdmin() {
+  const buuid = window._currentBrief && window._currentBrief.buuid;
+  if (buuid) {
+    window.open('https://admin.yoco.co.za/businesses/' + buuid + '/details/', '_blank');
+  } else {
+    const merchant = document.getElementById('briefTitle').textContent;
+    window.open('https://admin.yoco.co.za/businesses?search=' + encodeURIComponent(merchant), '_blank');
   }
 }
 
