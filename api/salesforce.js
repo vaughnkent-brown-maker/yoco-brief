@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   </env:Body>
 </env:Envelope>`;
 
-    const authRes = await fetch(`${instanceUrl}/services/Soap/u/59.0`, {
+    const authRes = await fetch('https://login.salesforce.com/services/Soap/u/59.0', {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml',
