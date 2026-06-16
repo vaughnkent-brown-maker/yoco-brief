@@ -11,6 +11,9 @@
     },
     "api/notion-search.js": {
       "maxDuration": 30
+    },
+    "api/salesforce.js": {
+      "maxDuration": 30
     }
   }
 }
