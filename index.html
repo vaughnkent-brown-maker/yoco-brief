@@ -6,174 +6,264 @@
 <title>Yoco AM Brief</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: #F5F4F0; color: #1a1a1a; font-size: 14px; }
-  .header { background: #1a1a1a; padding: 0 2rem; display: flex; align-items: center; gap: 12px; height: 56px; }
-  .badge { background: rgba(255,255,255,0.1); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-  .header-btns { margin-left: auto; display: flex; gap: 8px; }
-  .header-btn { height: 28px; padding: 0 12px; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; opacity: 0.4; pointer-events: none; }
-  .header-btn.active { opacity: 1; pointer-events: auto; border-color: rgba(255,255,255,0.5); }
-  .header-btn.sf { background: #00A1E0; border-color: #00A1E0; }
-  .main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
-  .card { background: #fff; border-radius: 14px; border: 1px solid #E5E4E0; margin-bottom: 1.25rem; }
-  .card-pad { padding: 1.75rem 2rem; }
-  h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-  .subtitle { color: #888; font-size: 13px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; margin-top: 1.25rem; align-items: end; }
-  .field label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
-  .field input { width: 100%; height: 42px; border: 1px solid #E5E4E0; border-radius: 8px; padding: 0 14px; font-size: 14px; font-family: inherit; outline: none; }
-  .field input:focus { border-color: #0066FF; }
-  .btn-primary { height: 42px; padding: 0 24px; background: #0066FF; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-  .pills { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.25rem; }
-  .pill { background: #fff; border: 1px solid #E5E4E0; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
-  .pdot { width: 8px; height: 8px; border-radius: 50%; background: #E5E4E0; flex-shrink: 0; }
-  .pdot.live { background: #22C55E; }
-  .pdot.loading { background: #F59E0B; animation: pulse 1s infinite; }
-  .pdot.error { background: #EF4444; }
-  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
-  .pill strong { display: block; font-size: 12px; font-weight: 600; }
-  .pill span { font-size: 11px; color: #888; }
-  #briefOutput { display: none; }
-  .brief-hdr { padding: 1.5rem 2rem; border-bottom: 1px solid #F0EFE9; display: flex; align-items: center; justify-content: space-between; }
-  .brief-title { font-size: 22px; font-weight: 700; }
-  .brief-meta { font-size: 12px; color: #888; margin-top: 2px; }
-  .brief-actions { display: flex; gap: 8px; }
-  .btn-act { height: 36px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #E5E4E0; background: #fff; }
-  .btn-act.dark { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-  .btn-act.blue { background: #00A1E0; color: #fff; border-color: #00A1E0; }
-  .section { padding: 1.5rem 2rem; border-bottom: 1px solid #F0EFE9; }
-  .section:last-child { border-bottom: none; }
-  .slabel { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-  .sdot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-  .live-tag { font-size: 10px; font-weight: 700; background: #DCFCE7; color: #16A34A; padding: 2px 7px; border-radius: 4px; }
-  .metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
-  .metric { background: #F7F6F3; border-radius: 10px; padding: 14px 16px; }
-  .mlabel { font-size: 10px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-  .mval { font-size: 17px; font-weight: 700; }
-  .msub { font-size: 11px; color: #888; margin-top: 2px; }
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; margin-top: 14px; }
-  .ir { display: flex; padding: 8px 0; border-bottom: 1px solid #F0EFE9; }
-  .ir:last-child { border-bottom: none; }
-  .il { font-size: 12px; color: #888; width: 150px; flex-shrink: 0; }
-  .iv { font-size: 13px; font-weight: 500; }
-  .rc { border: 1px solid #EDE9FE; border-radius: 9px; padding: 12px 14px; margin-bottom: 8px; background: #FAFAFE; }
-  .rh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-  .rname { font-size: 13px; font-weight: 700; }
-  .rsumm { font-size: 12px; color: #666; line-height: 1.5; margin-bottom: 8px; }
-  .rtp { font-size: 12px; color: #5B21B6; background: #F5F3FF; border-radius: 6px; padding: 7px 10px; line-height: 1.5; }
-  .tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
-  .tg { background: #DCFCE7; color: #16A34A; }
-  .tb { background: #FEF3C7; color: #D97706; }
-  .ta { background: #F3F4F6; color: #6B7280; }
-  .ai-box { background: #F7F6F3; border-radius: 10px; padding: 16px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; color: #333; }
-  #loading { display: none; padding: 3rem; text-align: center; }
-  .spin { width: 32px; height: 32px; border: 3px solid #E5E4E0; border-top-color: #0066FF; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #loadingMsg { font-size: 13px; color: #888; }
-  #errBox { display: none; margin: 1rem; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px; }
-  .etitle { color: #DC2626; font-weight: 700; margin-bottom: 4px; }
-  details summary { font-size: 12px; color: #888; cursor: pointer; padding: 6px 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #F5F4F0; color: #1a1a1a; font-size: 14px; }
+
+/* Header */
+.header { background: #1a1a1a; padding: 0 2rem; display: flex; align-items: center; gap: 12px; height: 52px; }
+.badge { background: rgba(255,255,255,0.1); color: #aaa; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+
+/* Layout */
+.main { max-width: 960px; margin: 0 auto; padding: 2rem; }
+
+/* Generator card */
+.gen-card { background: #fff; border-radius: 14px; border: 1px solid #E5E4E0; padding: 1.75rem 2rem; margin-bottom: 1rem; }
+.gen-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+.gen-subtitle { color: #999; font-size: 12px; margin-bottom: 1.25rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+.field label { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 6px; }
+.field input { width: 100%; height: 40px; border: 1px solid #E5E4E0; border-radius: 8px; padding: 0 14px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+.field input:focus { border-color: #0066FF; }
+.btn-primary { height: 40px; padding: 0 22px; background: #0066FF; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-primary:hover { background: #0052cc; }
+.group-row { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+.group-row input[type=checkbox] { width: 15px; height: 15px; accent-color: #0066FF; cursor: pointer; }
+.group-row label { font-size: 13px; font-weight: 500; cursor: pointer; color: #444; }
+.group-row span { color: #999; font-weight: 400; }
+
+/* Status pills */
+.pills { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 1rem; }
+.pill { background: #fff; border: 1px solid #E5E4E0; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+.pdot { width: 7px; height: 7px; border-radius: 50%; background: #E5E4E0; flex-shrink: 0; }
+.pdot.live { background: #22C55E; }
+.pdot.loading { background: #F59E0B; animation: pulse 1s infinite; }
+.pdot.error { background: #EF4444; }
+.pdot.mock { background: #94A3B8; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+.pill strong { display: block; font-size: 12px; font-weight: 600; }
+.pill span { font-size: 11px; color: #888; }
+
+/* Account picker */
+.picker-card { background: #fff; border-radius: 14px; border: 1px solid #E5E4E0; padding: 1.5rem 2rem; margin-bottom: 1rem; display: none; }
+
+/* Brief output */
+#briefOutput { display: none; }
+.brief-card { background: #fff; border-radius: 14px; border: 1px solid #E5E4E0; overflow: hidden; }
+
+/* Brief header */
+.brief-hdr { padding: 1.5rem 2rem; border-bottom: 1px solid #F0EFE9; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.brief-title { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.brief-meta { font-size: 12px; color: #999; margin-top: 4px; }
+.brief-hdr-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; margin-top: 2px; }
+.btn-sf { height: 34px; padding: 0 14px; background: #00A1E0; color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; opacity: 0.4; pointer-events: none; transition: opacity 0.2s; }
+.btn-sf.active { opacity: 1; pointer-events: auto; }
+.btn-save { height: 34px; padding: 0 14px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* Loading */
+#loading { display: none; padding: 3rem; text-align: center; }
+.spin { width: 28px; height: 28px; border: 2.5px solid #E5E4E0; border-top-color: #0066FF; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loadingMsg { font-size: 13px; color: #888; }
+
+/* Error */
+#errBox { display: none; margin: 1.5rem; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px 16px; }
+.etitle { color: #DC2626; font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+
+/* Sections */
+.section { padding: 1.5rem 2rem; border-bottom: 1px solid #F0EFE9; }
+.section:last-child { border-bottom: none; }
+.slabel { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sdot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.live-tag { font-size: 9px; font-weight: 700; background: #DCFCE7; color: #16A34A; padding: 2px 6px; border-radius: 4px; }
+.notion-tag { font-size: 9px; font-weight: 700; background: #F3F4F6; color: #6B7280; padding: 2px 6px; border-radius: 4px; }
+
+/* Metric grid */
+.metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.metrics-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.metric { background: #F7F6F3; border-radius: 10px; padding: 12px 14px; }
+.mlabel { font-size: 10px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.mval { font-size: 16px; font-weight: 700; line-height: 1.2; }
+.msub { font-size: 11px; color: #888; margin-top: 3px; }
+
+/* Two-col info grid */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem; margin-top: 14px; }
+.ir { display: flex; padding: 7px 0; border-bottom: 1px solid #F5F4F0; }
+.ir:last-child { border-bottom: none; }
+.il { font-size: 12px; color: #888; width: 140px; flex-shrink: 0; }
+.iv { font-size: 13px; font-weight: 500; }
+
+/* Task row */
+.task-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid #F5F4F0; }
+.task-row:last-child { border-bottom: none; }
+
+/* Contacts */
+.contacts-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 8px; margin-top: 12px; }
+.contact-card { border: 1px solid #E5E4E0; border-radius: 10px; padding: 12px 14px; background: #fff; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+
+/* Product pills */
+.product-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.ppill { border-radius: 8px; padding: 8px 14px; }
+.ppill-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; opacity: 0.75; }
+.ppill-val { font-size: 13px; font-weight: 700; }
+
+/* Release cards */
+.rc { border: 1px solid #EDE9FE; border-radius: 9px; padding: 12px 14px; margin-bottom: 8px; background: #FAFAFE; }
+.rh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.rname { font-size: 13px; font-weight: 700; }
+.rsumm { font-size: 12px; color: #666; line-height: 1.5; margin-bottom: 7px; }
+.rtp { font-size: 12px; color: #5B21B6; background: #F5F3FF; border-radius: 6px; padding: 7px 10px; line-height: 1.5; }
+.tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+.tg { background: #DCFCE7; color: #16A34A; }
+.tb { background: #FEF3C7; color: #D97706; }
+.ta { background: #F3F4F6; color: #6B7280; }
+
+/* AI box */
+.ai-box { background: #F7F6F3; border-radius: 10px; padding: 16px 18px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; color: #333; }
+
+/* Cases */
+.case-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #F5F4F0; gap: 12px; }
+.case-row:last-child { border-bottom: none; }
+
+/* Highlight banner */
+.banner { border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
+.banner-warn { background: #FFF7ED; border: 1px solid #FED7AA; color: #92400E; }
+.banner-info { background: #EDE9FE; border: 1px solid #DDD6FE; color: #5B21B6; }
+.banner-ok { background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; }
+.banner-alert { background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; }
+
+/* Industry grid */
+.industry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ind-box { border-radius: 9px; padding: 12px 14px; }
+
+/* Capital status colors */
+.cap-active { color: #16A34A; }
+.cap-offered { color: #D97706; }
+.cap-overdue { color: #DC2626; }
+.cap-eligible { color: #2563EB; }
+
+details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0; }
 </style>
 </head>
 <body>
 
+<!-- Header — clean, no buttons -->
 <div class="header">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72" style="height:24px;display:block">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72" style="height:22px;display:block">
     <text x="4" y="62" font-family="Montserrat, Arial Black, sans-serif" font-weight="900" font-size="72" fill="white" letter-spacing="-1">YOCO</text>
   </svg>
   <div class="badge">AM Brief Generator</div>
-  <div class="header-btns">
-    <button class="header-btn sf" id="hSfBtn" onclick="openSalesforce()">Salesforce</button>
-    <button class="header-btn" id="hAdminBtn" onclick="openAdmin()">Yoco Admin</button>
-  </div>
 </div>
 
 <div class="main">
-  <div class="card card-pad">
+
+  <!-- Generator form -->
+  <div class="gen-card">
     <h2>Generate Merchant Brief</h2>
-    <p class="subtitle">Live Salesforce · Notion product releases · AI synthesis</p>
+    <p class="gen-subtitle">Live Salesforce · Notion product releases · AI synthesis</p>
     <div class="form-row">
       <div class="field"><label>Merchant Name</label><input id="merchant" placeholder="e.g. The Strangers Club" /></div>
       <div class="field"><label>Account Manager</label><input id="am" value="Vaughn Kent-Brown" /></div>
       <button class="btn-primary" onclick="generate()">Generate Brief</button>
     </div>
-    <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
-      <input type="checkbox" id="groupAccount" style="width:16px;height:16px;accent-color:#0066FF;cursor:pointer">
-      <label for="groupAccount" style="font-size:13px;font-weight:500;cursor:pointer">Group Account <span style="color:#888;font-weight:400">— tick to show all sub-accounts under this head office</span></label>
+    <div class="group-row">
+      <input type="checkbox" id="groupAccount">
+      <label for="groupAccount">Group Account <span>— show all sub-accounts under this head office</span></label>
     </div>
   </div>
 
+  <!-- Data source status -->
   <div class="pills">
     <div class="pill"><div class="pdot" id="dot-sf"></div><div><strong>Salesforce</strong><span id="sf-status">Ready</span></div></div>
     <div class="pill"><div class="pdot" id="dot-rel"></div><div><strong>Product Releases</strong><span id="rel-status">Notion DB</span></div></div>
     <div class="pill"><div class="pdot" id="dot-ai"></div><div><strong>AI Synthesis</strong><span id="ai-status">Gemini</span></div></div>
   </div>
 
-  <!-- Account picker — shown when multiple SF accounts match -->
-  <div id="accountPicker" style="display:none" class="card card-pad">
+  <!-- Account picker -->
+  <div id="accountPicker" class="picker-card">
     <p style="font-weight:700;font-size:15px;margin-bottom:4px">Multiple accounts found</p>
-    <p style="font-size:13px;color:#888;margin-bottom:16px">Select the correct account to generate the brief.</p>
+    <p style="font-size:13px;color:#888;margin-bottom:14px">Select the correct account to continue.</p>
     <div id="accountList"></div>
   </div>
 
-  <div class="card" id="briefOutput">
-    <div class="brief-hdr">
-      <div><div class="brief-title" id="briefTitle"></div><div class="brief-meta" id="briefMeta"></div></div>
-      <div class="brief-actions">
-        <button class="btn-act dark" id="saveBtn" onclick="saveToNotion()">Save to Notion</button>
-        <button class="btn-act blue" onclick="openSalesforce()">Salesforce</button>
-        <button class="btn-act" onclick="openAdmin()">Yoco Admin</button>
+  <!-- Brief output -->
+  <div id="briefOutput">
+    <div class="brief-card">
+
+      <!-- Brief header -->
+      <div class="brief-hdr">
+        <div>
+          <div class="brief-title" id="briefTitle"></div>
+          <div class="brief-meta" id="briefMeta"></div>
+        </div>
+        <div class="brief-hdr-actions">
+          <button class="btn-sf" id="hSfBtn" onclick="openSalesforce()">View in Salesforce</button>
+          <button class="btn-save" id="saveBtn" onclick="saveToNotion()">Save to Notion</button>
+        </div>
       </div>
-    </div>
 
-    <div id="loading"><div class="spin"></div><div id="loadingMsg">Fetching account data...</div></div>
-    <div id="errBox"><div class="etitle">Brief generation failed</div><div id="errMsg" style="font-size:13px;color:#666"></div></div>
+      <!-- Loading / error -->
+      <div id="loading"><div class="spin"></div><div id="loadingMsg">Fetching account data...</div></div>
+      <div id="errBox"><div class="etitle">Brief generation failed</div><div id="errMsg" style="font-size:13px;color:#666;margin-top:2px"></div></div>
 
-    <div class="section" id="sfSection" style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#00A1E0"></span>Salesforce — Account Snapshot <span class="live-tag">Live</span></div>
-      <div class="metrics" id="sfMetrics"></div>
-      <div class="info-grid" id="sfDetails"></div>
-      <div id="sfTasks"></div>
+      <!-- 1. Account Snapshot -->
+      <div class="section" id="sfSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#00A1E0"></span>Account Snapshot <span class="live-tag">Live · Salesforce</span></div>
+        <div class="metrics" id="sfMetrics"></div>
+        <div class="info-grid" id="sfDetails"></div>
+        <div id="sfTasks"></div>
+      </div>
+
+      <!-- 2. Contacts -->
       <div id="sfContacts"></div>
-    </div>
 
-    <div class="section" id="prevTasksSection" style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Previous Activity — Last 5 closed tasks</div>
-      <div id="prevTasksContent"></div>
-      <div style="background:#F7F6F3;border-radius:10px;padding:14px 16px;margin-top:12px;font-size:13px;line-height:1.6;color:#333;display:none" id="taskSummaryBox">
-        <strong style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">AI Summary of recent activity</strong>
-        <div id="taskSummary"></div>
+      <!-- 3. Product Usage -->
+      <div class="section" id="productsSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Product Usage <span class="live-tag">Live · Salesforce</span></div>
+        <div id="productsContent"></div>
       </div>
-    </div>
 
-    <div class="section" id="subAccountsSection" style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Group Account — Sub-accounts <span class="live-tag">Live · Salesforce</span></div>
-      <div id="subAccountsContent"></div>
-    </div>
+      <!-- 3. Capital -->
+      <div class="section" id="capitalSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Yoco Capital</div>
+        <div id="capitalContent"></div>
+      </div>
 
-    <div class="section" id="productsSection" style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Product Usage <span class="live-tag">Live · Salesforce</span></div>
-      <div id="productsContent"></div>
-    </div>
+      <!-- 4. Support & Cases -->
+      <div class="section" id="intercomSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#EF4444"></span>Support & Cases <span class="live-tag">Live · Salesforce</span></div>
+        <div id="intercomContent"></div>
+      </div>
 
-    <div class="section" id="industrySection" style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#16A34A"></span>Industry Intelligence</div>
-      <div id="industryContent"></div>
-    </div>
+      <!-- 5. Sub-accounts (group only) -->
+      <div class="section" id="subAccountsSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Group Account — Locations <span class="live-tag">Live · Salesforce</span></div>
+        <div id="subAccountsContent"></div>
+      </div>
 
-    <div class="section" id="intercomSection" style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#FF6B6B"></span>Support & Intercom <span class="live-tag">Live · Salesforce</span></div>
-      <div id="intercomContent"></div>
-    </div>
+      <!-- 6. Previous Activity -->
+      <div class="section" id="prevTasksSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Previous Activity</div>
+        <div id="prevTasksContent"></div>
+      </div>
 
-    <div class="section" id="relSection"  style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Upcoming Releases — Relevant to this merchant <span class="live-tag">Notion</span></div>
-      <div id="relContent"></div>
-    </div>
+      <!-- 8. Industry Intelligence -->
+      <div class="section" id="industrySection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#16A34A"></span>Industry Intelligence</div>
+        <div id="industryContent"></div>
+      </div>
 
-    <div class="section" id="aiSection" style="display:none">
-      <div class="slabel"><span class="sdot" style="background:#1a1a1a"></span>AI Synthesis — Pre-meeting brief</div>
-      <div class="ai-box" id="aiContent"></div>
+      <!-- 9. Product Releases -->
+      <div class="section" id="relSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Upcoming Releases <span class="notion-tag">Notion</span></div>
+        <div id="relContent"></div>
+      </div>
+
+      <!-- 10. AI Synthesis -->
+      <div class="section" id="aiSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#1a1a1a"></span>AI Pre-meeting Brief</div>
+        <div class="ai-box" id="aiContent"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -194,6 +284,14 @@ const RELEASES = [
   {name:"Yoco Connect Slice 2",stage:"Beta",date:"2026-06-07",tier:"Tier 2",segments:["eCommerce","Online","Shopify","WooCommerce"],summary:"Second phase of Yoco Connect — improved integrations with third-party platforms.",talking_point:"For merchants using Shopify or other eCommerce platforms alongside in-store Yoco."}
 ];
 
+const INDUSTRY_INSIGHTS = {
+  'food': { peakTimes:'Fri–Sun evenings, public holidays', avgBasket:'R180–R350', challenges:'Staff turnover, load shedding impact on trade, food cost inflation', yocoFit:'Tables, Orders, Selling Modes (Dine-in/Quick Order), Loyalty', watchOuts:'Seasonality dips in Jan/Feb, competitor POS providers aggressive in F&B', goodToKnow:'F&B merchants on Core plan typically see 40%+ uplift moving to Plus due to Loyalty and Tables features' },
+  'retail': { peakTimes:'Dec–Jan, month-end paydays, Black Friday', avgBasket:'R250–R600', challenges:'Inventory management, shrinkage, online competition', yocoFit:'Barcode Scanning, Item Level Refunds, Voids & Discounts Controls, Yoco Connect (Shopify)', watchOuts:'High churn risk if POS issues arise during peak season', goodToKnow:'Retail merchants benefit most from the new Item Level Refunds — reduces friction significantly' },
+  'health': { peakTimes:'Weekday mornings, pre-holiday grooming', avgBasket:'R400–R900', challenges:'Appointment no-shows, staff commission tracking', yocoFit:'H&B POS, Appointments Mode, Selling Modes, Services on all plans', watchOuts:'High sensitivity to app reliability — any downtime costs appointments', goodToKnow:'Health & Beauty POS just launched — this is a major value add for salons on Plus plan' },
+  'hospitality': { peakTimes:'Weekends, school holidays, Cape Town high season (Dec–Mar)', avgBasket:'R300–R800', challenges:'Multi-location coordination, seasonal cash flow', yocoFit:'Tables, Orders, Order Types, Selling Modes, Yoco Capital for off-season float', watchOuts:'Cape Town merchants face July–Aug low season — proactive Capital conversation', goodToKnow:'Group accounts in hospitality often have inconsistent plan adoption across locations' },
+  'default': { peakTimes:'Month-end, public holidays', avgBasket:'R150–R400', challenges:'Load shedding impact, cash flow management', yocoFit:'Plans 2.0, Yoco Savings, Voids & Discounts Controls', watchOuts:'Ensure fully onboarded — incomplete onboarding increases churn risk significantly', goodToKnow:'All merchants on Core plan qualify for the recent rates decrease — good retention conversation' }
+};
+
 const MSGS = ['Fetching account data from Salesforce...','Finding relevant product releases...','Generating AI synthesis...','Almost done...'];
 let _sf = null, _timer = null, _idx = 0;
 
@@ -201,24 +299,325 @@ function dot(id, state) {
   const el = document.getElementById(id);
   if (el) el.className = 'pdot' + (state ? ' ' + state : '');
 }
-
-function openSalesforce() {
-  window.open(_sf?.sfUrl || 'https://yoco.lightning.force.com', '_blank');
-}
-function openAdmin() {
-  const b = _sf?.buuid;
-  window.open(b ? `https://admin.yoco.co.za/businesses/${b}/details/` : 'https://admin.yoco.co.za', '_blank');
-}
+function openSalesforce() { window.open(_sf?.sfUrl || 'https://yoco.lightning.force.com', '_blank'); }
 function activateBtns() {
-  ['hSfBtn','hAdminBtn'].forEach(id => {
-    const b = document.getElementById(id);
-    if (b) b.classList.add('active');
-  });
+  const b = document.getElementById('hSfBtn');
+  if (b) b.classList.add('active');
 }
 
 function getRelevant(industry) {
   const ctx = (industry || '').toLowerCase();
   return RELEASES.filter(r => r.segments.includes('all') || r.segments.some(s => ctx.includes(s.toLowerCase())));
+}
+
+function getIndustryInsight(industry) {
+  const ind = (industry || '').toLowerCase();
+  if (ind.includes('food') || ind.includes('drink') || ind.includes('restaurant') || ind.includes('cafe') || ind.includes('beverage')) return INDUSTRY_INSIGHTS.food;
+  if (ind.includes('retail') || ind.includes('shop') || ind.includes('store') || ind.includes('grocery')) return INDUSTRY_INSIGHTS.retail;
+  if (ind.includes('health') || ind.includes('beauty') || ind.includes('salon') || ind.includes('spa') || ind.includes('wellness')) return INDUSTRY_INSIGHTS.health;
+  if (ind.includes('hospitality') || ind.includes('hotel') || ind.includes('accommodation') || ind.includes('tourism')) return INDUSTRY_INSIGHTS.hospitality;
+  return INDUSTRY_INSIGHTS.default;
+}
+
+function fmt(n) { return n ? 'R' + Number(n).toLocaleString('en-ZA') : '—'; }
+
+// --- RENDER FUNCTIONS ---
+
+function renderSF(sf) {
+  document.getElementById('sfSection').style.display = 'block';
+
+  // Top metrics — TPV big, key account, billing, location
+  document.getElementById('sfMetrics').innerHTML = `
+    <div class="metric">
+      <div class="mlabel">30-Day TPV</div>
+      <div class="mval" style="font-size:18px">${sf.tpv30Day ? fmt(sf.tpv30Day) : '—'}</div>
+      ${sf.volumeThisMonth ? `<div class="msub">This month: ${fmt(sf.volumeThisMonth)}</div>` : ''}
+    </div>
+    <div class="metric">
+      <div class="mlabel">Billing Package</div>
+      <div class="mval" style="font-size:15px">${sf.billingPackage || '—'}</div>
+      ${sf.transactionRate ? `<div class="msub">Rate: ${sf.transactionRate}</div>` : ''}
+    </div>
+    <div class="metric">
+      <div class="mlabel">Key Account</div>
+      <div class="mval" style="font-size:15px">${sf.isKeyAccount ? '✅ Yes' : 'No'}</div>
+      <div class="msub">${sf.owner || '—'}</div>
+    </div>
+    <div class="metric">
+      <div class="mlabel">Location</div>
+      <div class="mval" style="font-size:14px">${sf.city || '—'}</div>
+      <div class="msub">${sf.industry || '—'}</div>
+    </div>`;
+
+  // Detail rows
+  document.getElementById('sfDetails').innerHTML = `
+    <div>
+      ${sf.phone ? `<div class="ir"><span class="il">Phone</span><span class="iv">${sf.phone}</span></div>` : ''}
+      ${sf.createdDate ? `<div class="ir"><span class="il">On Yoco since</span><span class="iv">${new Date(sf.createdDate).toLocaleDateString('en-ZA')}</span></div>` : ''}
+      ${sf.fullyOnboarded != null ? `<div class="ir"><span class="il">Fully onboarded</span><span class="iv">${sf.fullyOnboarded ? '✅ Yes' : '❌ No'}</span></div>` : ''}
+      ${sf.nps ? `<div class="ir"><span class="il">NPS Score</span><span class="iv">${sf.nps}</span></div>` : ''}
+    </div>
+    <div>
+      ${sf.openDeals ? `<div class="ir"><span class="il">Open deals</span><span class="iv">${sf.openDeals}</span></div>` : ''}
+      ${sf.wonDeals ? `<div class="ir"><span class="il">Won deals</span><span class="iv">${sf.wonDeals}</span></div>` : ''}
+      ${sf.buuid ? `<div class="ir"><span class="il">BUUID</span><span class="iv"><a href="https://admin.yoco.co.za/businesses/${sf.buuid}/details/" target="_blank" style="font-size:11px;font-family:monospace;color:#0066FF;text-decoration:none">${sf.buuid}</a></span></div>` : ''}
+      ${sf.health ? `<div class="ir"><span class="il">Account Health</span><span class="iv">${sf.health}</span></div>` : ''}
+    </div>`;
+
+  // Open tasks
+  if (sf.openTasks?.length) {
+    const sfBase = sf.sfInstance || 'https://yoco.lightning.force.com';
+    document.getElementById('sfTasks').innerHTML = `
+      <div style="margin-top:16px">
+        <p style="font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Open Tasks (${sf.openTasks.length})</p>
+        ${sf.openTasks.map(t => `
+          <div class="task-row">
+            <div>
+              ${t.id ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>`
+                     : `<p style="font-size:13px;font-weight:600">${t.subject}</p>`}
+              <p style="font-size:11px;color:#888;margin-top:2px">${t.status} · Due ${t.dueDate || '—'}</p>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:${t.priority==='High'?'#DC2626':t.priority==='Normal'?'#D97706':'#888'}">${t.priority || ''}</span>
+          </div>`).join('')}
+      </div>`;
+  }
+}
+
+function renderProducts(sf) {
+  const sec = document.getElementById('productsSection');
+  const con = document.getElementById('productsContent');
+  sec.style.display = 'block';
+
+  let gatewayVal = null;
+  if (sf.hasGateway !== null && sf.hasGateway !== undefined) {
+    if (typeof sf.hasGateway === 'boolean') gatewayVal = sf.hasGateway ? 'Active' : 'Not active';
+    else if (typeof sf.hasGateway === 'number') gatewayVal = sf.hasGateway > 0 ? `Active (${fmt(sf.hasGateway)})` : 'Not active';
+    else gatewayVal = sf.hasGateway;
+  }
+  let savingsVal = null;
+  if (sf.hasSavings !== null && sf.hasSavings !== undefined) {
+    if (typeof sf.hasSavings === 'boolean') savingsVal = sf.hasSavings ? 'Active' : 'Not active';
+    else savingsVal = sf.hasSavings;
+  }
+
+  const products = [
+    { label:'Billing Plan', value:sf.billingPackage, bg:'#DBEAFE', color:'#1D4ED8' },
+    { label:'Terminals', value:sf.terminalCount ? `${sf.terminalCount} device${sf.terminalCount>1?'s':''}` : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Yoco Gateway', value:gatewayVal, bg:gatewayVal?.includes('Active')?'#DCFCE7':'#F3F4F6', color:gatewayVal?.includes('Active')?'#16A34A':'#6B7280' },
+    { label:'Yoco Savings', value:savingsVal, bg:savingsVal==='Active'?'#DCFCE7':'#F3F4F6', color:savingsVal==='Active'?'#16A34A':'#6B7280' },
+    { label:'Segment', value:sf.segment, bg:'#F5F3FF', color:'#7C3AED' },
+    { label:'Transaction Rate', value:sf.transactionRate || null, bg:'#FEF3C7', color:'#D97706' },
+  ].filter(p => p.value !== null && p.value !== undefined && p.value !== '');
+
+  con.innerHTML = products.length
+    ? `<div class="product-pills">${products.map(p => `
+        <div class="ppill" style="background:${p.bg}">
+          <div class="ppill-label" style="color:${p.color}">${p.label}</div>
+          <div class="ppill-val" style="color:${p.color}">${p.value}</div>
+        </div>`).join('')}</div>`
+    : '<p style="font-size:13px;color:#888">Product usage data not available.</p>';
+}
+
+function renderCapital(sf) {
+  const sec = document.getElementById('capitalSection');
+  const con = document.getElementById('capitalContent');
+  const hasData = sf.capitalBalance !== null || sf.capitalTaken !== null || sf.capitalStatus !== null || sf.capitalEligible !== null;
+
+  sec.style.display = 'block';
+  if (!hasData) {
+    con.innerHTML = `<p style="font-size:13px;color:#888">No Capital data on this account. <span style="color:#7C3AED;font-weight:600">Consider raising Capital eligibility in this meeting.</span></p>`;
+    return;
+  }
+
+  const statusColor = { 'Active':'#16A34A','Offered':'#D97706','Repaid':'#6B7280','Overdue':'#DC2626','Eligible':'#2563EB' };
+  con.innerHTML = `
+    <div class="metrics-3" style="margin-bottom:10px">
+      ${sf.capitalStatus ? `<div class="metric"><div class="mlabel">Status</div><div class="mval" style="color:${statusColor[sf.capitalStatus]||'#1a1a1a'}">${sf.capitalStatus}</div></div>` : ''}
+      ${sf.capitalTaken ? `<div class="metric"><div class="mlabel">Capital Taken</div><div class="mval">${fmt(sf.capitalTaken)}</div></div>` : ''}
+      ${sf.capitalBalance ? `<div class="metric"><div class="mlabel">Outstanding</div><div class="mval">${fmt(sf.capitalBalance)}</div></div>` : ''}
+      ${sf.capitalLimit ? `<div class="metric"><div class="mlabel">Limit</div><div class="mval">${fmt(sf.capitalLimit)}</div></div>` : ''}
+      ${sf.capitalEligible !== null ? `<div class="metric"><div class="mlabel">Eligible</div><div class="mval">${sf.capitalEligible ? '✅ Yes' : '❌ No'}</div></div>` : ''}
+    </div>
+    ${sf.capitalStatus === 'Active' ? `<div class="banner banner-warn">⚠️ <strong>Active Capital loan</strong> — be mindful of repayment deductions when discussing TPV trends.</div>` : ''}
+    ${sf.capitalStatus === 'Overdue' ? `<div class="banner banner-alert">🚨 <strong>Overdue Capital</strong> — handle with care, escalate if needed.</div>` : ''}
+    ${sf.capitalEligible && !sf.capitalStatus ? `<div class="banner banner-info">💡 <strong>Capital opportunity</strong> — eligible but hasn't taken Capital. Good conversation to have.</div>` : ''}`;
+}
+
+function renderIntercom(sf) {
+  const sec = document.getElementById('intercomSection');
+  const con = document.getElementById('intercomContent');
+  const hasCases = sf.cases?.length > 0;
+  if (!hasCases) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  const openCases = (sf.cases || []).filter(c => !['Closed','Resolved'].includes(c.status));
+  const closedCases = (sf.cases || []).filter(c => ['Closed','Resolved'].includes(c.status));
+
+  const topIssues = {};
+  (sf.cases || []).forEach(c => {
+    const s = (c.subject || '').toLowerCase();
+    if (s.includes('payment') || s.includes('transaction')) topIssues['Payment issues'] = (topIssues['Payment issues']||0)+1;
+    else if (s.includes('terminal') || s.includes('device') || s.includes('hardware')) topIssues['Hardware'] = (topIssues['Hardware']||0)+1;
+    else if (s.includes('app') || s.includes('software')) topIssues['App issues'] = (topIssues['App issues']||0)+1;
+    else if (s.includes('payout') || s.includes('settlement')) topIssues['Payout'] = (topIssues['Payout']||0)+1;
+    else if (s.includes('account') || s.includes('login')) topIssues['Account access'] = (topIssues['Account access']||0)+1;
+    else topIssues['Other'] = (topIssues['Other']||0)+1;
+  });
+  const issuesSummary = Object.entries(topIssues).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k} (${v})`).join(', ');
+
+  const statusBg = {'Open':'#FEF2F2','New':'#FEF2F2','In Progress':'#FEF3C7','Closed':'#F3F4F6','Resolved':'#DCFCE7'};
+  const statusColor = {'Open':'#DC2626','New':'#DC2626','In Progress':'#D97706','Closed':'#6B7280','Resolved':'#16A34A'};
+
+  con.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="metric">
+        <div class="mlabel">Open Cases</div>
+        <div class="mval" style="color:${openCases.length > 0 ? '#DC2626' : '#16A34A'}">${openCases.length}</div>
+        <div class="msub">of ${sf.cases?.length||0} total</div>
+      </div>
+      <div class="metric">
+        <div class="mlabel">Resolved</div>
+        <div class="mval">${closedCases.length}</div>
+        <div class="msub">cases closed</div>
+      </div>
+    </div>
+    ${issuesSummary ? `<div class="banner banner-warn" style="margin-bottom:12px"><strong>Most common:</strong> ${issuesSummary}</div>` : ''}
+    ${sf.intercomLastContact ? `<p style="font-size:12px;color:#888;margin-bottom:10px">Last Intercom contact: <strong style="color:#1a1a1a">${sf.intercomLastContact}</strong></p>` : ''}
+    <div>
+      ${sf.cases.slice(0,8).map(c => `
+        <div class="case-row">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              <span style="font-size:10px;color:#aaa">#${c.caseNumber||c.id?.slice(-6)||'—'}</span>
+              ${c.origin ? `<span style="font-size:10px;color:#aaa">· ${c.origin}</span>` : ''}
+            </div>
+            <p style="font-size:13px;font-weight:600">${c.subject||'No subject'}</p>
+            ${c.description ? `<p style="font-size:12px;color:#666;margin-top:2px;line-height:1.4">${c.description.slice(0,120)}${c.description.length>120?'...':''}</p>` : ''}
+            <p style="font-size:11px;color:#bbb;margin-top:3px">${c.created||''} ${c.closed ? '→ closed '+c.closed : ''}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+            <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${statusBg[c.status]||'#F3F4F6'};color:${statusColor[c.status]||'#6B7280'}">${c.status}</span>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderSubAccounts(children) {
+  const sec = document.getElementById('subAccountsSection');
+  const con = document.getElementById('subAccountsContent');
+  sec.style.display = 'block';
+
+  if (!children?.length) {
+    con.innerHTML = '<p style="font-size:13px;color:#888">No sub-accounts found under this head office.</p>';
+    return;
+  }
+
+  const totalTPV = children.reduce((sum,c) => sum + (parseFloat(c.tpv30Day)||0), 0);
+  const onboarded = children.filter(c => c.fullyOnboarded).length;
+
+  con.innerHTML = `
+    <div class="metrics-3" style="margin-bottom:14px">
+      <div class="metric"><div class="mlabel">Locations</div><div class="mval">${children.length}</div><div class="msub">Sub-accounts</div></div>
+      <div class="metric"><div class="mlabel">Combined 30-Day TPV</div><div class="mval">${totalTPV > 0 ? fmt(totalTPV) : '—'}</div></div>
+      <div class="metric"><div class="mlabel">Fully Onboarded</div><div class="mval">${onboarded} / ${children.length}</div></div>
+    </div>
+    ${children.map(c => `
+    <div style="border:1px solid #E5E4E0;border-radius:10px;overflow:hidden;margin-bottom:8px">
+      <div style="background:#F7F6F3;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <p style="font-weight:700;font-size:13px">${c.name}</p>
+          <p style="font-size:11px;color:#888">${c.city||'—'}, ${c.country||'—'} · ${c.owner||'—'}</p>
+        </div>
+        <div style="text-align:right">
+          ${c.tpv30Day ? `<p style="font-size:14px;font-weight:700">${fmt(c.tpv30Day)}</p><p style="font-size:11px;color:#888">30-day TPV</p>` : ''}
+        </div>
+      </div>
+      <div style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+        ${c.billingPackage ? `<div><span style="font-size:11px;color:#888">Package</span><br><span style="font-size:13px;font-weight:600">${c.billingPackage}</span></div>` : ''}
+        ${c.industry ? `<div><span style="font-size:11px;color:#888">Industry</span><br><span style="font-size:13px;font-weight:600">${c.industry}</span></div>` : ''}
+        ${c.fullyOnboarded != null ? `<div><span style="font-size:11px;color:#888">Onboarded</span><br><span style="font-size:13px;font-weight:600">${c.fullyOnboarded ? '✅' : '❌'}</span></div>` : ''}
+        <div style="margin-left:auto">
+          <a href="${c.sfUrl}" target="_blank" style="font-size:12px;color:#00A1E0;font-weight:600;text-decoration:none">Salesforce →</a>
+        </div>
+      </div>
+    </div>`).join('')}`;
+}
+
+function renderPreviousTasks(tasks) {
+  if (!tasks?.length) return;
+  const sec = document.getElementById('prevTasksSection');
+  const con = document.getElementById('prevTasksContent');
+  sec.style.display = 'block';
+  const sfBase = _sf?.sfInstance || 'https://yoco.lightning.force.com';
+  con.innerHTML = tasks.map(t => `
+    <div class="task-row">
+      <div style="flex:1">
+        ${t.id
+          ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>`
+          : `<p style="font-size:13px;font-weight:600">${t.subject}</p>`}
+        ${t.description ? `<p style="font-size:12px;color:#666;line-height:1.4;margin-top:2px">${t.description.slice(0,150)}${t.description.length>150?'...':''}</p>` : ''}
+        <p style="font-size:11px;color:#bbb;margin-top:2px">${t.owner||''} · ${t.date||''}</p>
+      </div>
+      <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#F3F4F6;color:#6B7280;flex-shrink:0;margin-left:10px">${t.status}</span>
+    </div>`).join('');
+}
+
+function formatWhatsApp(number) {
+  let n = (number || '').replace(/[\s\-\(\)]/g,'');
+  if (n.startsWith('0')) n = '27' + n.slice(1);
+  if (n.startsWith('+')) n = n.slice(1);
+  return n;
+}
+
+function renderContacts(contacts) {
+  const con = document.getElementById('sfContacts');
+  if (!contacts?.length) return;
+  con.innerHTML = `
+    <div class="section">
+      <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Contacts (${contacts.length})</div>
+      <div class="contacts-grid">
+        ${contacts.map(c => {
+          const mobile = c.mobile || c.phone;
+          const waNumber = formatWhatsApp(mobile);
+          return `
+          <div class="contact-card">
+            <div>
+              <p style="font-size:14px;font-weight:700;margin-bottom:2px">${c.name||'—'}</p>
+              ${c.title ? `<p style="font-size:12px;color:#888;margin-bottom:5px">${c.title}</p>` : '<div style="margin-bottom:5px"></div>'}
+              ${mobile ? `<p style="font-size:13px;font-weight:500">${mobile}</p>` : ''}
+              ${c.email ? `<p style="font-size:12px;color:#888;margin-top:2px">${c.email}</p>` : ''}
+            </div>
+            ${mobile && waNumber ? `
+            <a href="https://web.whatsapp.com/send?phone=${waNumber}" target="_blank"
+              style="display:flex;align-items:center;gap:5px;background:#25D366;color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;text-decoration:none;flex-shrink:0;margin-top:2px;white-space:nowrap">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              WhatsApp
+            </a>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+function renderIndustryInsights(industry) {
+  const sec = document.getElementById('industrySection');
+  const con = document.getElementById('industryContent');
+  if (!industry) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  const ins = getIndustryInsight(industry);
+  con.innerHTML = `
+    <div class="industry-grid">
+      <div>
+        <div class="ind-box" style="background:#F0FDF4;margin-bottom:8px"><p style="font-size:10px;font-weight:700;color:#16A34A;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Peak Trading Times</p><p style="font-size:13px">${ins.peakTimes}</p></div>
+        <div class="ind-box" style="background:#EFF6FF;margin-bottom:8px"><p style="font-size:10px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Avg Basket Size</p><p style="font-size:13px">${ins.avgBasket}</p></div>
+        <div class="ind-box" style="background:#F5F3FF"><p style="font-size:10px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Best Yoco Fit</p><p style="font-size:13px">${ins.yocoFit}</p></div>
+      </div>
+      <div>
+        <div class="ind-box" style="background:#FEF2F2;margin-bottom:8px"><p style="font-size:10px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Industry Challenges</p><p style="font-size:13px">${ins.challenges}</p></div>
+        <div class="ind-box" style="background:#FFF7ED;margin-bottom:8px"><p style="font-size:10px;font-weight:700;color:#D97706;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Watch Outs</p><p style="font-size:13px">${ins.watchOuts}</p></div>
+        <div class="ind-box" style="background:#F7F6F3"><p style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Good to Know</p><p style="font-size:13px">${ins.goodToKnow}</p></div>
+      </div>
+    </div>`;
 }
 
 function renderReleases(relevant) {
@@ -231,45 +630,12 @@ function renderReleases(relevant) {
   const rest = relevant.slice(3);
   const sc = {'Live to All':'tg','Beta':'tb','Alpha':'ta'};
   const topH = top.map(r => `<div class="rc">
-    <div class="rh"><span class="rname">${r.name}</span><div style="display:flex;gap:6px;align-items:center"><span class="tag ${sc[r.stage]||''}">${r.stage}</span><span style="font-size:11px;color:#aaa">${r.date}</span></div></div>
+    <div class="rh"><span class="rname">${r.name}</span><div style="display:flex;gap:6px;align-items:center"><span class="tag ${sc[r.stage]||''}">${r.stage}</span><span style="font-size:11px;color:#bbb">${r.date}</span></div></div>
     <div class="rsumm">${r.summary}</div>
-    <div class="rtp"><strong>💬</strong> ${r.talking_point}</div>
+    <div class="rtp">💬 ${r.talking_point}</div>
   </div>`).join('');
   const restH = rest.length ? `<details style="margin-top:4px"><summary>+${rest.length} more relevant releases</summary><div style="margin-top:8px">${rest.map(r => `<div style="padding:7px 0;border-bottom:1px solid #F0EFE9;display:flex;gap:8px"><span class="tag ${sc[r.stage]||''}" style="flex-shrink:0;margin-top:1px">${r.stage}</span><div><p style="font-size:13px;font-weight:600">${r.name}</p><p style="font-size:12px;color:#888">${r.talking_point}</p></div></div>`).join('')}</div></details>` : '';
   con.innerHTML = topH + restH;
-}
-
-function renderSF(sf) {
-  document.getElementById('sfSection').style.display = 'block';
-  document.getElementById('sfMetrics').innerHTML = `
-    <div class="metric"><div class="mlabel">Billing Package</div><div class="mval" style="font-size:15px">${sf.billingPackage||'—'}</div><div class="msub">${sf.type||''}</div></div>
-    <div class="metric"><div class="mlabel">Industry</div><div class="mval" style="font-size:14px">${sf.industry||'—'}</div><div class="msub">${sf.city||''}, ${sf.country||''}</div></div>
-    <div class="metric"><div class="mlabel">30-Day TPV</div><div class="mval" style="font-size:15px">${sf.tpv30Day ? 'R'+Number(sf.tpv30Day).toLocaleString() : '—'}</div><div class="msub">From Salesforce</div></div>
-    <div class="metric"><div class="mlabel">Key Account</div><div class="mval" style="font-size:15px">${sf.isKeyAccount ? '✅ Yes' : 'No'}</div><div class="msub">Owner: ${sf.owner||'—'}</div></div>`;
-  document.getElementById('sfDetails').innerHTML = `
-    <div>
-      ${sf.phone ? `<div class="ir"><span class="il">Phone</span><span class="iv">${sf.phone}</span></div>` : ''}
-      ${sf.createdDate ? `<div class="ir"><span class="il">On Yoco since</span><span class="iv">${new Date(sf.createdDate).toLocaleDateString('en-ZA')}</span></div>` : ''}
-      ${sf.fullyOnboarded != null ? `<div class="ir"><span class="il">Fully onboarded</span><span class="iv">${sf.fullyOnboarded ? '✅ Yes' : '❌ No'}</span></div>` : ''}
-      ${sf.openDeals ? `<div class="ir"><span class="il">Open deals</span><span class="iv">${sf.openDeals}</span></div>` : ''}
-    </div>
-    <div>
-      ${sf.buuid ? `<div class="ir"><span class="il">BUUID</span><span class="iv" style="font-size:11px;font-family:monospace">${sf.buuid}</span></div>` : ''}
-      ${sf.nps ? `<div class="ir"><span class="il">NPS Score</span><span class="iv">${sf.nps}</span></div>` : ''}
-      ${sf.wonDeals ? `<div class="ir"><span class="il">Won deals</span><span class="iv">${sf.wonDeals}</span></div>` : ''}
-      ${sf.volumeThisMonth ? `<div class="ir"><span class="il">Volume this month</span><span class="iv">R${Number(sf.volumeThisMonth).toLocaleString()}</span></div>` : ''}
-    </div>`;
-  if (sf.openTasks?.length) {
-    const sfBase = sf.sfInstance || 'https://yoco.lightning.force.com';
-    document.getElementById('sfTasks').innerHTML = `<div style="margin-top:14px"><p style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Open Tasks (${sf.openTasks.length})</p>${sf.openTasks.map(t => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F0EFE9">
-        <div>
-          ${t.id ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none;hover:text-decoration:underline" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>` : `<p style="font-size:13px;font-weight:500">${t.subject}</p>`}
-          <p style="font-size:11px;color:#888">${t.status} · Due ${t.dueDate||'—'}</p>
-        </div>
-        <span style="font-size:12px;font-weight:600;color:${t.priority==='High'?'#DC2626':'#D97706'}">${t.priority||''}</span>
-      </div>`).join('')}</div>`;
-  }
 }
 
 function showAccountPicker(accounts, merchant, am) {
@@ -277,14 +643,14 @@ function showAccountPicker(accounts, merchant, am) {
   const list = document.getElementById('accountList');
   picker.style.display = 'block';
   list.innerHTML = accounts.map(a => `
-    <div style="border:1px solid #E5E4E0;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color 0.15s" 
-      onclick="selectAccount('${a.id}', '${merchant}', '${am}')"
+    <div style="border:1px solid #E5E4E0;border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color 0.15s"
+      onclick="selectAccount('${a.id}','${merchant}','${am}')"
       onmouseover="this.style.borderColor='#0066FF'" onmouseout="this.style.borderColor='#E5E4E0'">
       <div>
         <p style="font-weight:700;font-size:14px">${a.name}</p>
-        <p style="font-size:12px;color:#888">${a.industry || '—'} · ${a.city || '—'}, ${a.country || '—'} · Owner: ${a.owner || '—'}</p>
+        <p style="font-size:12px;color:#888">${a.industry||'—'} · ${a.city||'—'}, ${a.country||'—'} · ${a.owner||'—'}</p>
       </div>
-      <button style="height:34px;padding:0 16px;background:#0066FF;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer">Select</button>
+      <button style="height:32px;padding:0 14px;background:#0066FF;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer">Select</button>
     </div>`).join('');
 }
 
@@ -296,393 +662,24 @@ function selectAccount(accountId, merchant, am) {
   generate();
 }
 
-function renderPreviousTasks(tasks) {
-  if (!tasks?.length) return;
-  const sec = document.getElementById('prevTasksSection');
-  const con = document.getElementById('prevTasksContent');
-  sec.style.display = 'block';
-
-  const sfBase = _sf?.sfInstance || 'https://yoco.lightning.force.com';
-  con.innerHTML = tasks.map(t => `
-    <div style="padding:10px 0;border-bottom:1px solid #F0EFE9;display:flex;justify-content:space-between;align-items:flex-start">
-      <div style="flex:1">
-        ${t.id
-          ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none;display:inline-block;margin-bottom:2px" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>`
-          : `<p style="font-size:13px;font-weight:600;margin-bottom:2px">${t.subject}</p>`}
-        ${t.description ? `<p style="font-size:12px;color:#666;line-height:1.4">${t.description.slice(0,150)}${t.description.length > 150 ? '...' : ''}</p>` : ''}
-        <p style="font-size:11px;color:#aaa;margin-top:2px">${t.owner || ''} · ${t.date || ''}</p>
-      </div>
-      <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:#F3F4F6;color:#6B7280;flex-shrink:0;margin-left:10px">${t.status}</span>
-    </div>`).join('');
-}
-
-function renderSubAccounts(children) {
-  const sec = document.getElementById('subAccountsSection');
-  const con = document.getElementById('subAccountsContent');
-
-  if (!children?.length) {
-    sec.style.display = 'block';
-    con.innerHTML = '<p style="font-size:13px;color:#888">No sub-accounts found under this head office in Salesforce.</p>';
-    return;
-  }
-
-  sec.style.display = 'block';
-
-  // Summary row
-  const totalTPV = children.reduce((sum, c) => sum + (parseFloat(c.tpv30Day) || 0), 0);
-  const onboarded = children.filter(c => c.fullyOnboarded).length;
-
-  con.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-      <div class="metric"><div class="mlabel">Sub-accounts</div><div class="mval">${children.length}</div><div class="msub">Linked to head office</div></div>
-      <div class="metric"><div class="mlabel">Combined 30-Day TPV</div><div class="mval">${totalTPV > 0 ? 'R' + totalTPV.toLocaleString() : '—'}</div><div class="msub">Across all locations</div></div>
-      <div class="metric"><div class="mlabel">Fully Onboarded</div><div class="mval">${onboarded} / ${children.length}</div><div class="msub">Locations</div></div>
-    </div>
-    ${children.map(c => `
-    <div style="border:1px solid #E5E4E0;border-radius:10px;overflow:hidden;margin-bottom:8px">
-      <div style="background:#F7F6F3;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <p style="font-weight:700;font-size:13px">${c.name}</p>
-          <p style="font-size:11px;color:#888">${c.city || '—'}, ${c.country || '—'} · Owner: ${c.owner || '—'}</p>
-        </div>
-        <div style="text-align:right">
-          ${c.tpv30Day ? `<p style="font-size:13px;font-weight:700">R${Number(c.tpv30Day).toLocaleString()}</p><p style="font-size:11px;color:#888">30-day TPV</p>` : ''}
-        </div>
-      </div>
-      <div style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:16px">
-        ${c.billingPackage ? `<div><span style="font-size:11px;color:#888">Package</span><br><span style="font-size:13px;font-weight:600">${c.billingPackage}</span></div>` : ''}
-        ${c.industry ? `<div><span style="font-size:11px;color:#888">Industry</span><br><span style="font-size:13px;font-weight:600">${c.industry}</span></div>` : ''}
-        ${c.phone ? `<div><span style="font-size:11px;color:#888">Phone</span><br><span style="font-size:13px;font-weight:600">${c.phone}</span></div>` : ''}
-        ${c.createdDate ? `<div><span style="font-size:11px;color:#888">On Yoco since</span><br><span style="font-size:13px;font-weight:600">${new Date(c.createdDate).toLocaleDateString('en-ZA')}</span></div>` : ''}
-        ${c.fullyOnboarded != null ? `<div><span style="font-size:11px;color:#888">Onboarded</span><br><span style="font-size:13px;font-weight:600">${c.fullyOnboarded ? '✅' : '❌'}</span></div>` : ''}
-        ${c.buuid ? `<div><span style="font-size:11px;color:#888">BUUID</span><br><a href="https://admin.yoco.co.za/businesses/${c.buuid}/details/" target="_blank" style="font-size:12px;color:#0066FF;font-family:monospace">${c.buuid.slice(0,20)}...</a></div>` : ''}
-        <div style="margin-left:auto">
-          <a href="${c.sfUrl}" target="_blank" style="font-size:12px;color:#00A1E0;font-weight:600;text-decoration:none">View in Salesforce →</a>
-        </div>
-      </div>
-    </div>`).join('')}`;
-}
-
-function formatWhatsApp(number) {
-  // Strip spaces, dashes, brackets, then handle SA numbers
-  let n = (number || '').replace(/[\s\-\(\)]/g, '');
-  if (n.startsWith('0')) n = '27' + n.slice(1);
-  if (n.startsWith('+')) n = n.slice(1);
-  return n;
-}
-
-function renderContacts(contacts) {
-  const con = document.getElementById('sfContacts');
-  if (!contacts?.length) return;
-
-  con.innerHTML = `
-    <div style="margin-top:16px">
-      <p style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Contacts (${contacts.length})</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
-        ${contacts.map(c => {
-          const mobile = c.mobile || c.phone;
-          const waNumber = formatWhatsApp(mobile);
-          const waUrl = `https://web.whatsapp.com/send?phone=${waNumber}`;
-          return `
-          <div style="border:1px solid #E5E4E0;border-radius:10px;padding:12px 14px;background:#fff">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-              <div>
-                <p style="font-size:14px;font-weight:700;margin-bottom:2px">${c.name || '—'}</p>
-                ${c.title ? `<p style="font-size:12px;color:#888;margin-bottom:6px">${c.title}</p>` : '<div style="margin-bottom:6px"></div>'}
-                ${mobile ? `<p style="font-size:13px;color:#1a1a1a;font-weight:500">${mobile}</p>` : ''}
-                ${c.email ? `<p style="font-size:12px;color:#888;margin-top:2px">${c.email}</p>` : ''}
-              </div>
-              ${mobile && waNumber ? `
-              <a href="${waUrl}" target="_blank" title="Open WhatsApp chat"
-                style="display:flex;align-items:center;gap:6px;background:#25D366;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;text-decoration:none;flex-shrink:0;margin-top:2px">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                WhatsApp
-              </a>` : ''}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-}
-
-// Industry intelligence database
-const INDUSTRY_INSIGHTS = {
-  'food': {
-    icon: '🍽️',
-    peakTimes: 'Fri–Sun evenings, public holidays',
-    avgBasket: 'R180–R350',
-    challenges: 'Staff turnover, load shedding impact on trade, food cost inflation',
-    yocoFit: 'Tables, Orders, Selling Modes (Dine-in/Quick Order), Loyalty',
-    watchOuts: 'Seasonality dips in Jan/Feb, competitor POS providers aggressive in F&B',
-    goodToKnow: 'F&B merchants on Core plan typically see 40%+ uplift moving to Plus due to Loyalty and Tables features'
-  },
-  'retail': {
-    icon: '🛍️',
-    peakTimes: 'Dec–Jan, month-end paydays, Black Friday',
-    avgBasket: 'R250–R600',
-    challenges: 'Inventory management, shrinkage, online competition',
-    yocoFit: 'Barcode Scanning, Item Level Refunds, Voids & Discounts Controls, Yoco Connect (Shopify)',
-    watchOuts: 'High churn risk if POS issues arise during peak season',
-    goodToKnow: 'Retail merchants benefit most from the new Item Level Refunds — reduces friction significantly'
-  },
-  'health': {
-    icon: '💆',
-    peakTimes: 'Weekday mornings, pre-holiday grooming',
-    avgBasket: 'R400–R900',
-    challenges: 'Appointment no-shows, staff commission tracking',
-    yocoFit: 'H&B POS, Appointments Mode, Selling Modes, Services on all plans',
-    watchOuts: 'High sensitivity to app reliability — any downtime costs appointments',
-    goodToKnow: 'Health & Beauty POS just launched — this is a major value add for salons on Plus plan'
-  },
-  'hospitality': {
-    icon: '🏨',
-    peakTimes: 'Weekends, school holidays, Cape Town high season (Dec–Mar)',
-    avgBasket: 'R300–R800',
-    challenges: 'Multi-location coordination, seasonal cash flow',
-    yocoFit: 'Tables, Orders, Order Types, Selling Modes, Yoco Capital for off-season float',
-    watchOuts: 'Cape Town merchants face July–Aug low season — proactive Capital conversation',
-    goodToKnow: 'Group accounts in hospitality often have inconsistent plan adoption across locations'
-  },
-  'default': {
-    icon: '🏪',
-    peakTimes: 'Month-end, public holidays',
-    avgBasket: 'R150–R400',
-    challenges: 'Load shedding impact, cash flow management',
-    yocoFit: 'Plans 2.0, Yoco Savings, Voids & Discounts Controls',
-    watchOuts: 'Ensure fully onboarded — incomplete onboarding increases churn risk significantly',
-    goodToKnow: 'All merchants on Core plan qualify for the recent rates decrease — good retention conversation'
-  }
-};
-
-function getIndustryInsight(industry) {
-  const ind = (industry || '').toLowerCase();
-  if (ind.includes('food') || ind.includes('drink') || ind.includes('restaurant') || ind.includes('cafe') || ind.includes('beverage')) return INDUSTRY_INSIGHTS.food;
-  if (ind.includes('retail') || ind.includes('shop') || ind.includes('store') || ind.includes('grocery')) return INDUSTRY_INSIGHTS.retail;
-  if (ind.includes('health') || ind.includes('beauty') || ind.includes('salon') || ind.includes('spa') || ind.includes('wellness')) return INDUSTRY_INSIGHTS.health;
-  if (ind.includes('hospitality') || ind.includes('hotel') || ind.includes('accommodation') || ind.includes('tourism')) return INDUSTRY_INSIGHTS.hospitality;
-  return INDUSTRY_INSIGHTS.default;
-}
-
-function renderCapital(sf) {
-  const sec = document.getElementById('capitalSection');
-  const con = document.getElementById('capitalContent');
-
-  const hasCapitalData = sf.capitalBalance !== null || sf.capitalTaken !== null || sf.capitalStatus !== null || sf.capitalEligible !== null;
-
-  if (!hasCapitalData) {
-    // Show no capital info but still surface the section as a talking point
-    sec.style.display = 'block';
-    con.innerHTML = `<p style="font-size:13px;color:#888">No Yoco Capital data found on this account. <span style="color:#7C3AED;font-weight:600">Consider raising Capital eligibility in this meeting.</span></p>`;
-    return;
-  }
-
-  sec.style.display = 'block';
-
-  const statusColor = {
-    'Active': '#16A34A', 'Offered': '#D97706', 'Repaid': '#6B7280',
-    'Overdue': '#DC2626', 'Eligible': '#2563EB'
-  };
-
-  con.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
-      ${sf.capitalStatus ? `<div class="metric"><div class="mlabel">Capital Status</div><div class="mval" style="font-size:15px;color:${statusColor[sf.capitalStatus]||'#1a1a1a'}">${sf.capitalStatus}</div></div>` : ''}
-      ${sf.capitalTaken ? `<div class="metric"><div class="mlabel">Capital Taken</div><div class="mval" style="font-size:15px">R${Number(sf.capitalTaken).toLocaleString()}</div></div>` : ''}
-      ${sf.capitalBalance ? `<div class="metric"><div class="mlabel">Outstanding Balance</div><div class="mval" style="font-size:15px">R${Number(sf.capitalBalance).toLocaleString()}</div></div>` : ''}
-      ${sf.capitalLimit ? `<div class="metric"><div class="mlabel">Capital Limit</div><div class="mval" style="font-size:15px">R${Number(sf.capitalLimit).toLocaleString()}</div></div>` : ''}
-      ${sf.capitalEligible !== null ? `<div class="metric"><div class="mlabel">Eligible</div><div class="mval" style="font-size:15px">${sf.capitalEligible ? '✅ Yes' : '❌ No'}</div></div>` : ''}
-    </div>
-    ${sf.capitalStatus === 'Active' ? `<div style="background:#FEF3C7;border:1px solid #FED7AA;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400E">⚠️ <strong>Active Capital loan</strong> — be mindful of repayment deductions when discussing TPV trends.</div>` : ''}
-    ${sf.capitalEligible && !sf.capitalStatus ? `<div style="background:#EDE9FE;border:1px solid #DDD6FE;border-radius:8px;padding:10px 12px;font-size:12px;color:#5B21B6">💡 <strong>Capital opportunity</strong> — merchant is eligible but hasn't taken Capital yet. Good conversation to have.</div>` : ''}`;
-}
-
-function renderProducts(sf) {
-  const sec = document.getElementById('productsSection');
-  const con = document.getElementById('productsContent');
-  sec.style.display = 'block';
-
-  // Format gateway value — if it's a number it's probably a volume not a boolean
-  let gatewayVal = null;
-  if (sf.hasGateway !== null && sf.hasGateway !== undefined) {
-    if (typeof sf.hasGateway === 'boolean') gatewayVal = sf.hasGateway ? 'Active' : 'Not active';
-    else if (typeof sf.hasGateway === 'number') gatewayVal = sf.hasGateway > 0 ? `Active (R${Number(sf.hasGateway).toLocaleString()})` : 'Not active';
-    else gatewayVal = sf.hasGateway;
-  }
-
-  let savingsVal = null;
-  if (sf.hasSavings !== null && sf.hasSavings !== undefined) {
-    if (typeof sf.hasSavings === 'boolean') savingsVal = sf.hasSavings ? 'Active' : 'Not active';
-    else savingsVal = sf.hasSavings;
-  }
-
-  // Product pills
-  const products = [
-    { label: 'Billing Plan', value: sf.billingPackage, color: '#DBEAFE', text: '#1D4ED8' },
-    { label: 'Terminals', value: sf.terminalCount ? `${sf.terminalCount} device${sf.terminalCount > 1 ? 's' : ''}` : null, color: '#DCFCE7', text: '#16A34A' },
-    { label: 'Yoco Gateway', value: gatewayVal, color: gatewayVal?.includes('Active') ? '#DCFCE7' : '#F3F4F6', text: gatewayVal?.includes('Active') ? '#16A34A' : '#6B7280' },
-    { label: 'Yoco Savings', value: savingsVal, color: savingsVal === 'Active' ? '#DCFCE7' : '#F3F4F6', text: savingsVal === 'Active' ? '#16A34A' : '#6B7280' },
-    { label: 'Segment', value: sf.segment, color: '#F5F3FF', text: '#7C3AED' },
-  ].filter(p => p.value !== null && p.value !== undefined && p.value !== '');
-
-  const pillsHtml = products.length ? `
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-      ${products.map(p => `
-        <div style="background:${p.color};border-radius:8px;padding:8px 14px">
-          <p style="font-size:10px;font-weight:600;color:${p.text};text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px">${p.label}</p>
-          <p style="font-size:13px;font-weight:700;color:${p.text}">${p.value}</p>
-        </div>`).join('')}
-    </div>` : '';
-
-  con.innerHTML = pillsHtml || '<p style="font-size:13px;color:#888">Product usage data not available.</p>';
-}
-
-function renderIndustryInsights(industry) {
-  const sec = document.getElementById('industrySection');
-  const con = document.getElementById('industryContent');
-  if (!industry) { sec.style.display = 'none'; return; }
-  sec.style.display = 'block';
-
-  const ins = getIndustryInsight(industry);
-
-  con.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div>
-        <div style="background:#F0FDF4;border-radius:10px;padding:12px 14px;margin-bottom:10px">
-          <p style="font-size:11px;font-weight:700;color:#16A34A;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Peak Trading Times</p>
-          <p style="font-size:13px;color:#1a1a1a">${ins.peakTimes}</p>
-        </div>
-        <div style="background:#EFF6FF;border-radius:10px;padding:12px 14px;margin-bottom:10px">
-          <p style="font-size:11px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Avg Basket Size (industry)</p>
-          <p style="font-size:13px;color:#1a1a1a">${ins.avgBasket}</p>
-        </div>
-        <div style="background:#F5F3FF;border-radius:10px;padding:12px 14px">
-          <p style="font-size:11px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Best Yoco Fit</p>
-          <p style="font-size:13px;color:#1a1a1a">${ins.yocoFit}</p>
-        </div>
-      </div>
-      <div>
-        <div style="background:#FEF2F2;border-radius:10px;padding:12px 14px;margin-bottom:10px">
-          <p style="font-size:11px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Industry Challenges</p>
-          <p style="font-size:13px;color:#1a1a1a">${ins.challenges}</p>
-        </div>
-        <div style="background:#FFF7ED;border-radius:10px;padding:12px 14px;margin-bottom:10px">
-          <p style="font-size:11px;font-weight:700;color:#D97706;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Watch Outs</p>
-          <p style="font-size:13px;color:#1a1a1a">${ins.watchOuts}</p>
-        </div>
-        <div style="background:#F7F6F3;border-radius:10px;padding:12px 14px">
-          <p style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">💡 Good to Know</p>
-          <p style="font-size:13px;color:#1a1a1a">${ins.goodToKnow}</p>
-        </div>
-      </div>
-    </div>`;
-}
-
-function renderIntercom(sf) {
-  const sec = document.getElementById('intercomSection');
-  const con = document.getElementById('intercomContent');
-
-  const hasCases = sf.cases?.length > 0;
-  const hasIntercomFields = sf.intercomOpenConvs !== null || sf.intercomHealth !== null ||
-    sf.intercomLastContact !== null || sf.openTickets !== null || sf.supportRating !== null;
-
-  if (!hasCases && !hasIntercomFields) {
-    sec.style.display = 'none';
-    return;
-  }
-
-  sec.style.display = 'block';
-
-  // Cases summary
-  const openCases = (sf.cases || []).filter(c => !['Closed','Resolved'].includes(c.status));
-  const closedCases = (sf.cases || []).filter(c => ['Closed','Resolved'].includes(c.status));
-
-  // AI-style summary of cases
-  const topIssues = {};
-  (sf.cases || []).forEach(c => {
-    const subject = (c.subject || '').toLowerCase();
-    if (subject.includes('payment') || subject.includes('transaction')) topIssues['Payment issues'] = (topIssues['Payment issues']||0)+1;
-    else if (subject.includes('terminal') || subject.includes('device') || subject.includes('hardware')) topIssues['Hardware/Terminal'] = (topIssues['Hardware/Terminal']||0)+1;
-    else if (subject.includes('app') || subject.includes('software')) topIssues['App issues'] = (topIssues['App issues']||0)+1;
-    else if (subject.includes('payout') || subject.includes('settlement')) topIssues['Payout/Settlement'] = (topIssues['Payout/Settlement']||0)+1;
-    else if (subject.includes('account') || subject.includes('login')) topIssues['Account access'] = (topIssues['Account access']||0)+1;
-    else topIssues['Other'] = (topIssues['Other']||0)+1;
-  });
-
-  const issuesSummary = Object.entries(topIssues)
-    .sort((a,b) => b[1]-a[1])
-    .map(([k,v]) => `${k} (${v})`)
-    .join(', ');
-
-  const priorityColor = { 'High': '#DC2626', 'Medium': '#D97706', 'Low': '#16A34A', 'Critical': '#7C3AED' };
-  const statusBg = { 'Open': '#FEF2F2', 'New': '#FEF2F2', 'In Progress': '#FEF3C7', 'Closed': '#F3F4F6', 'Resolved': '#DCFCE7' };
-  const statusColor = { 'Open': '#DC2626', 'New': '#DC2626', 'In Progress': '#D97706', 'Closed': '#6B7280', 'Resolved': '#16A34A' };
-
-  con.innerHTML = `
-    <!-- Summary metrics -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
-      <div class="metric">
-        <div class="mlabel">Open Cases</div>
-        <div class="mval" style="color:${openCases.length > 0 ? '#DC2626' : '#16A34A'}">${openCases.length}</div>
-        <div class="msub">of ${sf.cases?.length||0} total</div>
-      </div>
-      <div class="metric">
-        <div class="mlabel">Resolved</div>
-        <div class="mval">${closedCases.length}</div>
-        <div class="msub">cases closed</div>
-      </div>
-      ${sf.supportRating ? `<div class="metric">
-        <div class="mlabel">Support Rating</div>
-        <div class="mval">${sf.supportRating}</div>
-      </div>` : ''}
-      ${sf.intercomCsat ? `<div class="metric">
-        <div class="mlabel">CSAT Score</div>
-        <div class="mval">${sf.intercomCsat}</div>
-      </div>` : ''}
-    </div>
-
-    <!-- Issue summary -->
-    ${issuesSummary ? `
-    <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#92400E">
-      <strong>Most common issues:</strong> ${issuesSummary}
-    </div>` : ''}
-
-    ${sf.intercomLastContact ? `
-    <div style="font-size:12px;color:#888;margin-bottom:12px">Last Intercom contact: <strong style="color:#1a1a1a">${sf.intercomLastContact}</strong></div>` : ''}
-
-    <!-- Case list -->
-    ${sf.cases?.length ? `
-    <div>
-      ${sf.cases.slice(0,8).map(c => `
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F0EFE9;gap:12px">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
-              <span style="font-size:10px;color:#888">#${c.caseNumber||c.id.slice(-6)}</span>
-              ${c.origin ? `<span style="font-size:10px;color:#888">· ${c.origin}</span>` : ''}
-            </div>
-            <p style="font-size:13px;font-weight:600">${c.subject||'No subject'}</p>
-            ${c.description ? `<p style="font-size:12px;color:#666;margin-top:2px;line-height:1.4">${c.description.slice(0,120)}${c.description.length>120?'...':''}</p>` : ''}
-            <p style="font-size:11px;color:#aaa;margin-top:3px">${c.created||''} ${c.closed ? '→ closed '+c.closed : ''}</p>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-            <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:${statusBg[c.status]||'#F3F4F6'};color:${statusColor[c.status]||'#6B7280'}">${c.status}</span>
-            ${c.priority && c.priority !== 'Medium' ? `<span style="font-size:10px;font-weight:600;color:${priorityColor[c.priority]||'#888'}">${c.priority}</span>` : ''}
-          </div>
-        </div>`).join('')}
-    </div>` : ''}`;
-}
-
+// --- MAIN GENERATE ---
 async function generate() {
   const merchant = document.getElementById('merchant').value.trim();
   const am = document.getElementById('am').value.trim();
   if (!merchant) { alert('Enter a merchant name'); return; }
 
   _sf = null;
-  // Note: do NOT reset _chosenAccountId here — selectAccount() sets it just before calling generate()
   document.getElementById('subAccountsSection').style.display = 'none';
   document.getElementById('accountPicker').style.display = 'none';
   document.getElementById('briefOutput').style.display = 'block';
   document.getElementById('loading').style.display = 'block';
   document.getElementById('errBox').style.display = 'none';
-  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  document.getElementById('sfContacts').innerHTML = '';
+  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
   document.getElementById('briefTitle').textContent = merchant;
   document.getElementById('briefMeta').textContent = `Generating... · AM: ${am}`;
   dot('dot-sf','loading'); dot('dot-rel','loading'); dot('dot-ai','loading');
@@ -696,10 +693,9 @@ async function generate() {
     let sfData = null;
     try {
       const isGroup = document.getElementById('groupAccount').checked;
-      const r = await fetch('/api/salesforce', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({merchant, accountId: window._chosenAccountId || null, groupAccount: isGroup}) });
+      const r = await fetch('/api/salesforce', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({merchant, accountId: window._chosenAccountId||null, groupAccount: isGroup}) });
       sfData = await r.json();
 
-      // Multiple accounts — show picker and stop
       if (r.ok && sfData.found === 'multiple') {
         clearInterval(_timer);
         document.getElementById('loading').style.display = 'none';
@@ -715,12 +711,13 @@ async function generate() {
         dot('dot-sf','live');
         document.getElementById('sf-status').textContent = 'Live';
         renderSF(sfData);
+        renderProducts(sfData);
+        renderCapital(sfData);
+        renderIntercom(sfData);
         renderPreviousTasks(sfData.previousTasks);
         renderContacts(sfData.contacts);
         if (sfData.isGroupAccount) renderSubAccounts(sfData.childAccounts || []);
-        renderProducts(sfData);
         renderIndustryInsights(sfData.industry);
-        renderIntercom(sfData);
         activateBtns();
       } else {
         dot('dot-sf','error');
@@ -734,11 +731,11 @@ async function generate() {
     dot('dot-rel','live');
     document.getElementById('rel-status').textContent = `${relevant.length} relevant`;
 
-    // AI
+    // AI synthesis
     const prompt = `You are an Account Manager at Yoco preparing for a merchant meeting with "${merchant}".
 
 SALESFORCE DATA:
-${sfData?.found ? `Industry: ${sfData.industry||'Unknown'} | Billing: ${sfData.billingPackage||'Unknown'} | Type: ${sfData.type||'Unknown'} | Location: ${sfData.city||''} ${sfData.country||''} | Key Account: ${sfData.isKeyAccount?'Yes':'No'} | Owner: ${sfData.owner||'Unknown'} | 30-Day TPV: ${sfData.tpv30Day?'R'+Number(sfData.tpv30Day).toLocaleString():'Unknown'} | Volume this month: ${sfData.volumeThisMonth?'R'+Number(sfData.volumeThisMonth).toLocaleString():'Unknown'} | Fully onboarded: ${sfData.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData.openDeals||0} | On Yoco since: ${sfData.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData.openTasks?.map(t=>t.subject).join(', ')||'None'} | Support cases: ${sfData.cases?.length||0} total, ${(sfData.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open | Recent cases: ${(sfData.cases||[]).slice(0,3).map(c=>c.subject).join(', ')||'None'} | Capital status: ${sfData.capitalStatus||'Unknown'} | Capital taken: ${sfData.capitalTaken?'R'+Number(sfData.capitalTaken).toLocaleString():'None'} | Capital balance: ${sfData.capitalBalance?'R'+Number(sfData.capitalBalance).toLocaleString():'None'} | Capital eligible: ${sfData.capitalEligible?'Yes':'Unknown'} | Terminals: ${sfData.terminalCount||'Unknown'} | Has gateway: ${sfData.hasGateway||'Unknown'} | Has savings: ${sfData.hasSavings||'Unknown'} | Previous activity: ${sfData.previousTasks?.map(t=>t.subject+(t.description?' — '+t.description.slice(0,60):'')).join(' | ')||'None'}${sfData.isGroupAccount && sfData.childAccounts?.length ? ` | GROUP ACCOUNT with ${sfData.childAccounts.length} sub-accounts: ${sfData.childAccounts.map(c=>c.name+(c.billingPackage?' ('+c.billingPackage+')':'')).join(', ')}` : ''}` : 'Not available'}
+${sfData?.found ? `Industry: ${sfData.industry||'Unknown'} | Billing: ${sfData.billingPackage||'Unknown'} | Type: ${sfData.type||'Unknown'} | Location: ${sfData.city||''} ${sfData.country||''} | Key Account: ${sfData.isKeyAccount?'Yes':'No'} | Owner: ${sfData.owner||'Unknown'} | 30-Day TPV: ${sfData.tpv30Day?fmt(sfData.tpv30Day):'Unknown'} | Volume this month: ${sfData.volumeThisMonth?fmt(sfData.volumeThisMonth):'Unknown'} | Fully onboarded: ${sfData.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData.openDeals||0} | On Yoco since: ${sfData.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData.openTasks?.map(t=>t.subject).join(', ')||'None'} | Support cases: ${sfData.cases?.length||0} total, ${(sfData.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open | Capital status: ${sfData.capitalStatus||'Unknown'} | Capital taken: ${sfData.capitalTaken?fmt(sfData.capitalTaken):'None'} | Capital balance: ${sfData.capitalBalance?fmt(sfData.capitalBalance):'None'} | Capital eligible: ${sfData.capitalEligible?'Yes':'Unknown'} | Terminals: ${sfData.terminalCount||'Unknown'} | Has gateway: ${sfData.hasGateway||'Unknown'} | Previous activity: ${sfData.previousTasks?.map(t=>t.subject+(t.description?' — '+t.description.slice(0,60):'')).join(' | ')||'None'}${sfData.isGroupAccount && sfData.childAccounts?.length ? ` | GROUP ACCOUNT with ${sfData.childAccounts.length} sub-accounts: ${sfData.childAccounts.map(c=>c.name+(c.billingPackage?' ('+c.billingPackage+')':'')).join(', ')}` : ''}` : 'Not available'}
 
 RELEVANT PRODUCT RELEASES:
 ${relevant.slice(0,3).map(r=>`- ${r.name}: ${r.talking_point}`).join('\n')}
@@ -766,7 +763,7 @@ Only use what's in the data above. Be specific. Keep it tight.`;
     clearInterval(_timer);
     document.getElementById('loading').style.display = 'none';
     document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${am}`;
-    window._chosenAccountId = null; // Clear after successful generation
+    window._chosenAccountId = null;
 
     // Slack notify
     fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName:am, merchant}) }).catch(()=>{});
