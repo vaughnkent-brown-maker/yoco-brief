@@ -491,7 +491,7 @@ function renderIntercom(sf) {
               <span style="font-size:10px;color:#aaa">#${c.caseNumber||c.id?.slice(-6)||'—'}</span>
               ${c.origin ? `<span style="font-size:10px;color:#aaa">· ${c.origin}</span>` : ''}
             </div>
-            <p style="font-size:13px;font-weight:600">${c.subject||'No subject'}</p>
+            <a href="${(_sf?.sfInstance||'https://yoco.lightning.force.com')}/${c.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${c.subject||'No subject'} ↗</a>
             ${c.description ? `<p style="font-size:12px;color:#666;margin-top:2px;line-height:1.4">${c.description.slice(0,120)}${c.description.length>120?'...':''}</p>` : ''}
             <p style="font-size:11px;color:#bbb;margin-top:3px">${c.created||''} ${c.closed ? '→ closed '+c.closed : ''}</p>
           </div>
@@ -780,7 +780,8 @@ async function saveToNotion() {
   const merchant = document.getElementById('merchant').value.trim();
   const am = document.getElementById('am').value.trim();
   const ai = document.getElementById('aiContent').textContent;
-  if (!ai) { alert('Generate a brief first'); return; }
+  const content = ai || `Merchant: ${merchant}\nAM: ${am}\nGenerated: ${new Date().toLocaleString('en-ZA')}`;
+  if (!merchant) { alert('No merchant loaded'); return; }
   const btn = document.getElementById('saveBtn');
   btn.textContent = 'Saving...'; btn.disabled = true;
   try {
@@ -788,7 +789,7 @@ async function saveToNotion() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:300,
         mcp_servers:[{type:'url',url:'https://mcp.notion.com/mcp',name:'notion'}],
-        messages:[{role:'user',content:`Create a page in Notion database 9a7ba43eb13582acade68189d20d1327 titled "${merchant}" with this content: ${ai.slice(0,600)}`}]
+        messages:[{role:'user',content:`Create a page in Notion database 351ba43eb13580d5afcaf5f69d9bda5d titled "${merchant}" with this content: ${content.slice(0,600)}`}]
       })
     });
     btn.textContent = r.ok ? '✓ Saved' : 'Error';
