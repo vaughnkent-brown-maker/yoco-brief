@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { merchant } = req.body;
+  const { merchant, accountId, groupAccount } = req.body;
   if (!merchant) return res.status(400).json({ error: 'Merchant name required' });
 
   const username = process.env.SF_USERNAME;
@@ -69,9 +69,129 @@ export default async function handler(req, res) {
       return res.status(200).json({ found: false, summary: `No account found for "${merchant}"` });
     }
 
+    // Multiple accounts — return list for AM to choose
+    if (records.length > 1) {
+      // Check if a specific account ID was requested
+      const { accountId } = req.body;
+      if (!accountId) {
+        return res.status(200).json({
+          found: 'multiple',
+          accounts: records.map(r => ({
+            id: r.Id,
+            name: r.Name,
+            industry: r.Industry,
+            type: r.Type,
+            city: r.BillingCity,
+            country: r.BillingCountry,
+            owner: r.Owner?.Name,
+            lastModified: r.LastModifiedDate
+          }))
+        });
+      }
+      // Find the chosen account
+      const chosen = records.find(r => r.Id === accountId);
+      if (!chosen) return res.status(404).json({ found: false, summary: 'Account not found' });
+      records[0] = chosen;
+    }
+
     const a = records[0];
 
-    // Step 2 — discover custom fields on this account
+    // Step 2 — fetch previous tasks (last 5 closed/completed)
+    let previousTasks = [];
+    try {
+      const taskSoql = `SELECT Id, Subject, Description, Status, Priority, ActivityDate, CreatedDate, Owner.Name
+        FROM Task
+        WHERE WhatId = '${a.Id}' AND IsClosed = true
+        ORDER BY CreatedDate DESC LIMIT 5`;
+      const taskRes = await fetch(
+        `${sfInstance}/services/data/v59.0/query?q=${encodeURIComponent(taskSoql)}`,
+        { headers: { 'Authorization': `Bearer ${sessionId}`, 'Content-Type': 'application/json' } }
+      );
+      if (taskRes.ok) {
+        const taskData = await taskRes.json();
+        previousTasks = (taskData.records || []).map(t => ({
+          subject: t.Subject,
+          description: t.Description || '',
+          status: t.Status,
+          priority: t.Priority,
+          date: t.ActivityDate || t.CreatedDate?.split('T')[0],
+          owner: t.Owner?.Name
+        }));
+      }
+    } catch(e) { /* skip */ }
+
+    // Step 3 — fetch open tasks
+    let openTasks = [];
+    try {
+      const openSoql = `SELECT Id, Subject, Status, Priority, ActivityDate FROM Task
+        WHERE WhatId = '${a.Id}' AND IsClosed = false
+        ORDER BY ActivityDate ASC LIMIT 5`;
+      const openRes = await fetch(
+        `${sfInstance}/services/data/v59.0/query?q=${encodeURIComponent(openSoql)}`,
+        { headers: { 'Authorization': `Bearer ${sessionId}`, 'Content-Type': 'application/json' } }
+      );
+      if (openRes.ok) {
+        const openData = await openRes.json();
+        openTasks = (openData.records || []).map(t => ({
+          subject: t.Subject,
+          status: t.Status,
+          priority: t.Priority,
+          dueDate: t.ActivityDate
+        }));
+      }
+    } catch(e) { /* skip */ }
+
+    // Step 4 — fetch child/sub accounts if group account requested
+    let childAccounts = [];
+    if (groupAccount) {
+      try {
+        const childSoql = `SELECT Id, Name, Industry, Type, Phone, BillingCity, BillingCountry, Owner.Name, CreatedDate
+          FROM Account WHERE ParentId = '${a.Id}'
+          ORDER BY Name ASC LIMIT 20`;
+        const childRes = await fetch(
+          `${sfInstance}/services/data/v59.0/query?q=${encodeURIComponent(childSoql)}`,
+          { headers: { 'Authorization': `Bearer ${sessionId}`, 'Content-Type': 'application/json' } }
+        );
+        if (childRes.ok) {
+          const childData = await childRes.json();
+          // For each child, get custom fields
+          for (const child of childData.records || []) {
+            const childCustomRes = await fetch(
+              `${sfInstance}/services/data/v59.0/sobjects/Account/${child.Id}`,
+              { headers: { 'Authorization': `Bearer ${sessionId}` } }
+            );
+            let childCustom = {};
+            if (childCustomRes.ok) {
+              const cd = await childCustomRes.json();
+              const keys = Object.keys(cd).filter(k => k.endsWith('__c'));
+              const buuidKey = keys.find(k => k.toLowerCase().includes('uuid') || k.toLowerCase().includes('buuid'));
+              childCustom = {
+                buuid: buuidKey ? cd[buuidKey] : null,
+                billingPackage: cd.Billing_Package__c || cd.BillingPackage__c || null,
+                tpv30Day: cd.X30_Day_TPV__c || null,
+                volumeThisMonth: cd.Pipedrive_Legacy_Volume_this_month__c || null,
+                fullyOnboarded: cd.Fully_Onboarded__c || null
+              };
+            }
+            childAccounts.push({
+              id: child.Id,
+              name: child.Name,
+              industry: child.Industry,
+              type: child.Type,
+              phone: child.Phone,
+              city: child.BillingCity,
+              country: child.BillingCountry,
+              owner: child.Owner?.Name,
+              createdDate: child.CreatedDate,
+              sfUrl: `${sfInstance}/${child.Id}`,
+              ...childCustom
+            });
+          }
+        }
+      } catch(e) { /* skip child accounts */ }
+    }
+
+    // Step 5 — discover custom fields on this account
     let customFields = {};
     try {
       const descRes = await fetch(

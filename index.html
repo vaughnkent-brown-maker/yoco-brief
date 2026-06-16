@@ -97,12 +97,23 @@
       <div class="field"><label>Account Manager</label><input id="am" value="Vaughn Kent-Brown" /></div>
       <button class="btn-primary" onclick="generate()">Generate Brief</button>
     </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="groupAccount" style="width:16px;height:16px;accent-color:#0066FF;cursor:pointer">
+      <label for="groupAccount" style="font-size:13px;font-weight:500;cursor:pointer">Group Account <span style="color:#888;font-weight:400">— tick to show all sub-accounts under this head office</span></label>
+    </div>
   </div>
 
   <div class="pills">
     <div class="pill"><div class="pdot" id="dot-sf"></div><div><strong>Salesforce</strong><span id="sf-status">Ready</span></div></div>
     <div class="pill"><div class="pdot" id="dot-rel"></div><div><strong>Product Releases</strong><span id="rel-status">Notion DB</span></div></div>
     <div class="pill"><div class="pdot" id="dot-ai"></div><div><strong>AI Synthesis</strong><span id="ai-status">Gemini</span></div></div>
+  </div>
+
+  <!-- Account picker — shown when multiple SF accounts match -->
+  <div id="accountPicker" style="display:none" class="card card-pad">
+    <p style="font-weight:700;font-size:15px;margin-bottom:4px">Multiple accounts found</p>
+    <p style="font-size:13px;color:#888;margin-bottom:16px">Select the correct account to generate the brief.</p>
+    <div id="accountList"></div>
   </div>
 
   <div class="card" id="briefOutput">
@@ -125,7 +136,21 @@
       <div id="sfTasks"></div>
     </div>
 
-    <div class="section" id="relSection" style="display:none">
+    <div class="section" id="prevTasksSection" style="display:none">
+      <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Previous Activity — Last 5 closed tasks</div>
+      <div id="prevTasksContent"></div>
+      <div style="background:#F7F6F3;border-radius:10px;padding:14px 16px;margin-top:12px;font-size:13px;line-height:1.6;color:#333;display:none" id="taskSummaryBox">
+        <strong style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">AI Summary of recent activity</strong>
+        <div id="taskSummary"></div>
+      </div>
+    </div>
+
+    <div class="section" id="subAccountsSection" style="display:none">
+      <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Group Account — Sub-accounts <span class="live-tag">Live · Salesforce</span></div>
+      <div id="subAccountsContent"></div>
+    </div>
+
+    <div class="section" id="relSection"  style="display:none">
       <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Upcoming Releases — Relevant to this merchant <span class="live-tag">Notion</span></div>
       <div id="relContent"></div>
     </div>
@@ -223,12 +248,103 @@ function renderSF(sf) {
   }
 }
 
+function showAccountPicker(accounts, merchant, am) {
+  const picker = document.getElementById('accountPicker');
+  const list = document.getElementById('accountList');
+  picker.style.display = 'block';
+  list.innerHTML = accounts.map(a => `
+    <div style="border:1px solid #E5E4E0;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color 0.15s" 
+      onclick="selectAccount('${a.id}', '${merchant}', '${am}')"
+      onmouseover="this.style.borderColor='#0066FF'" onmouseout="this.style.borderColor='#E5E4E0'">
+      <div>
+        <p style="font-weight:700;font-size:14px">${a.name}</p>
+        <p style="font-size:12px;color:#888">${a.industry || '—'} · ${a.city || '—'}, ${a.country || '—'} · Owner: ${a.owner || '—'}</p>
+      </div>
+      <button style="height:34px;padding:0 16px;background:#0066FF;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer">Select</button>
+    </div>`).join('');
+}
+
+function selectAccount(accountId, merchant, am) {
+  window._chosenAccountId = accountId;
+  document.getElementById('accountPicker').style.display = 'none';
+  document.getElementById('merchant').value = merchant;
+  document.getElementById('am').value = am;
+  generate();
+}
+
+function renderPreviousTasks(tasks) {
+  if (!tasks?.length) return;
+  const sec = document.getElementById('prevTasksSection');
+  const con = document.getElementById('prevTasksContent');
+  sec.style.display = 'block';
+
+  con.innerHTML = tasks.map(t => `
+    <div style="padding:10px 0;border-bottom:1px solid #F0EFE9;display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="flex:1">
+        <p style="font-size:13px;font-weight:600;margin-bottom:2px">${t.subject}</p>
+        ${t.description ? `<p style="font-size:12px;color:#666;line-height:1.4">${t.description.slice(0,150)}${t.description.length > 150 ? '...' : ''}</p>` : ''}
+        <p style="font-size:11px;color:#aaa;margin-top:2px">${t.owner || ''} · ${t.date || ''}</p>
+      </div>
+      <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:#F3F4F6;color:#6B7280;flex-shrink:0;margin-left:10px">${t.status}</span>
+    </div>`).join('');
+}
+
+function renderSubAccounts(children) {
+  const sec = document.getElementById('subAccountsSection');
+  const con = document.getElementById('subAccountsContent');
+
+  if (!children?.length) {
+    sec.style.display = 'block';
+    con.innerHTML = '<p style="font-size:13px;color:#888">No sub-accounts found under this head office in Salesforce.</p>';
+    return;
+  }
+
+  sec.style.display = 'block';
+
+  // Summary row
+  const totalTPV = children.reduce((sum, c) => sum + (parseFloat(c.tpv30Day) || 0), 0);
+  const onboarded = children.filter(c => c.fullyOnboarded).length;
+
+  con.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div class="metric"><div class="mlabel">Sub-accounts</div><div class="mval">${children.length}</div><div class="msub">Linked to head office</div></div>
+      <div class="metric"><div class="mlabel">Combined 30-Day TPV</div><div class="mval">${totalTPV > 0 ? 'R' + totalTPV.toLocaleString() : '—'}</div><div class="msub">Across all locations</div></div>
+      <div class="metric"><div class="mlabel">Fully Onboarded</div><div class="mval">${onboarded} / ${children.length}</div><div class="msub">Locations</div></div>
+    </div>
+    ${children.map(c => `
+    <div style="border:1px solid #E5E4E0;border-radius:10px;overflow:hidden;margin-bottom:8px">
+      <div style="background:#F7F6F3;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <p style="font-weight:700;font-size:13px">${c.name}</p>
+          <p style="font-size:11px;color:#888">${c.city || '—'}, ${c.country || '—'} · Owner: ${c.owner || '—'}</p>
+        </div>
+        <div style="text-align:right">
+          ${c.tpv30Day ? `<p style="font-size:13px;font-weight:700">R${Number(c.tpv30Day).toLocaleString()}</p><p style="font-size:11px;color:#888">30-day TPV</p>` : ''}
+        </div>
+      </div>
+      <div style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:16px">
+        ${c.billingPackage ? `<div><span style="font-size:11px;color:#888">Package</span><br><span style="font-size:13px;font-weight:600">${c.billingPackage}</span></div>` : ''}
+        ${c.industry ? `<div><span style="font-size:11px;color:#888">Industry</span><br><span style="font-size:13px;font-weight:600">${c.industry}</span></div>` : ''}
+        ${c.phone ? `<div><span style="font-size:11px;color:#888">Phone</span><br><span style="font-size:13px;font-weight:600">${c.phone}</span></div>` : ''}
+        ${c.createdDate ? `<div><span style="font-size:11px;color:#888">On Yoco since</span><br><span style="font-size:13px;font-weight:600">${new Date(c.createdDate).toLocaleDateString('en-ZA')}</span></div>` : ''}
+        ${c.fullyOnboarded != null ? `<div><span style="font-size:11px;color:#888">Onboarded</span><br><span style="font-size:13px;font-weight:600">${c.fullyOnboarded ? '✅' : '❌'}</span></div>` : ''}
+        ${c.buuid ? `<div><span style="font-size:11px;color:#888">BUUID</span><br><a href="https://admin.yoco.co.za/businesses/${c.buuid}/details/" target="_blank" style="font-size:12px;color:#0066FF;font-family:monospace">${c.buuid.slice(0,20)}...</a></div>` : ''}
+        <div style="margin-left:auto">
+          <a href="${c.sfUrl}" target="_blank" style="font-size:12px;color:#00A1E0;font-weight:600;text-decoration:none">View in Salesforce →</a>
+        </div>
+      </div>
+    </div>`).join('')}`;
+}
+
 async function generate() {
   const merchant = document.getElementById('merchant').value.trim();
   const am = document.getElementById('am').value.trim();
   if (!merchant) { alert('Enter a merchant name'); return; }
 
   _sf = null;
+  window._chosenAccountId = null;
+  document.getElementById('subAccountsSection').style.display = 'none';
+  document.getElementById('accountPicker').style.display = 'none';
   document.getElementById('briefOutput').style.display = 'block';
   document.getElementById('loading').style.display = 'block';
   document.getElementById('errBox').style.display = 'none';
@@ -245,13 +361,28 @@ async function generate() {
     // Salesforce
     let sfData = null;
     try {
-      const r = await fetch('/api/salesforce', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({merchant}) });
+      const isGroup = document.getElementById('groupAccount').checked;
+      const r = await fetch('/api/salesforce', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({merchant, accountId: window._chosenAccountId || null, groupAccount: isGroup}) });
       sfData = await r.json();
+
+      // Multiple accounts — show picker and stop
+      if (r.ok && sfData.found === 'multiple') {
+        clearInterval(_timer);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('briefOutput').style.display = 'none';
+        dot('dot-sf','loading');
+        document.getElementById('sf-status').textContent = `${sfData.accounts.length} found`;
+        showAccountPicker(sfData.accounts, merchant, am);
+        return;
+      }
+
       if (r.ok && sfData.found) {
         _sf = sfData;
         dot('dot-sf','live');
         document.getElementById('sf-status').textContent = 'Live';
         renderSF(sfData);
+        renderPreviousTasks(sfData.previousTasks);
+        if (sfData.isGroupAccount) renderSubAccounts(sfData.childAccounts || []);
         activateBtns();
       } else {
         dot('dot-sf','error');
@@ -269,7 +400,7 @@ async function generate() {
     const prompt = `You are an Account Manager at Yoco preparing for a merchant meeting with "${merchant}".
 
 SALESFORCE DATA:
-${sfData?.found ? `Industry: ${sfData.industry||'Unknown'} | Billing: ${sfData.billingPackage||'Unknown'} | Type: ${sfData.type||'Unknown'} | Location: ${sfData.city||''} ${sfData.country||''} | Key Account: ${sfData.isKeyAccount?'Yes':'No'} | Owner: ${sfData.owner||'Unknown'} | 30-Day TPV: ${sfData.tpv30Day?'R'+Number(sfData.tpv30Day).toLocaleString():'Unknown'} | Volume this month: ${sfData.volumeThisMonth?'R'+Number(sfData.volumeThisMonth).toLocaleString():'Unknown'} | Fully onboarded: ${sfData.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData.openDeals||0} | On Yoco since: ${sfData.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData.openTasks?.map(t=>t.subject).join(', ')||'None'}` : 'Not available'}
+${sfData?.found ? `Industry: ${sfData.industry||'Unknown'} | Billing: ${sfData.billingPackage||'Unknown'} | Type: ${sfData.type||'Unknown'} | Location: ${sfData.city||''} ${sfData.country||''} | Key Account: ${sfData.isKeyAccount?'Yes':'No'} | Owner: ${sfData.owner||'Unknown'} | 30-Day TPV: ${sfData.tpv30Day?'R'+Number(sfData.tpv30Day).toLocaleString():'Unknown'} | Volume this month: ${sfData.volumeThisMonth?'R'+Number(sfData.volumeThisMonth).toLocaleString():'Unknown'} | Fully onboarded: ${sfData.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData.openDeals||0} | On Yoco since: ${sfData.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData.openTasks?.map(t=>t.subject).join(', ')||'None'} | Previous activity: ${sfData.previousTasks?.map(t=>t.subject+(t.description?' — '+t.description.slice(0,60):'')).join(' | ')||'None'}${sfData.isGroupAccount && sfData.childAccounts?.length ? ` | GROUP ACCOUNT with ${sfData.childAccounts.length} sub-accounts: ${sfData.childAccounts.map(c=>c.name+(c.billingPackage?' ('+c.billingPackage+')':'')).join(', ')}` : ''}` : 'Not available'}
 
 RELEVANT PRODUCT RELEASES:
 ${relevant.slice(0,3).map(r=>`- ${r.name}: ${r.talking_point}`).join('\n')}
