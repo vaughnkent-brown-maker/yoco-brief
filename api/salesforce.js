@@ -88,6 +88,21 @@ export default async function handler(req, res) {
     }
 
     const a = records[0];
+
+    // Now try to get custom fields separately
+    let customFields = {};
+    try {
+      const customSoql = `SELECT Id, Business_Uuid__c, Billing_Package__c, Key_Account__c, NPS_Score__c FROM Account WHERE Id = '${a.Id}'`;
+      const customRes = await fetch(
+        `${sfInstance}/services/data/v59.0/query?q=${encodeURIComponent(customSoql)}`,
+        { headers: { 'Authorization': `Bearer ${sessionId}`, 'Content-Type': 'application/json' } }
+      );
+      if (customRes.ok) {
+        const customData = await customRes.json();
+        if (customData.records?.[0]) customFields = customData.records[0];
+      }
+    } catch(e) { /* custom fields not available */ }
+
     return res.status(200).json({
       found: true,
       id: a.Id,
@@ -96,24 +111,15 @@ export default async function handler(req, res) {
       type: a.Type,
       phone: a.Phone,
       city: a.BillingCity,
-      billingPackage: a.Billing_Package__c,
-      buuid: a.Business_Uuid__c,
-      isKeyAccount: a.Key_Account__c,
+      country: a.BillingCountry,
+      billingPackage: customFields.Billing_Package__c || null,
+      buuid: customFields.Business_Uuid__c || null,
+      isKeyAccount: customFields.Key_Account__c || false,
       owner: a.Owner?.Name,
-      nps: a.NPS_Score__c,
+      nps: customFields.NPS_Score__c || null,
       createdDate: a.CreatedDate,
-      openTasks: (a.OpenActivities?.records || []).map(t => ({
-        subject: t.Subject,
-        status: t.Status,
-        priority: t.Priority,
-        dueDate: t.ActivityDate
-      })),
-      opportunities: (a.Opportunities?.records || []).map(o => ({
-        name: o.Name,
-        stage: o.StageName,
-        amount: o.Amount,
-        closeDate: o.CloseDate
-      })),
+      openTasks: [],
+      opportunities: [],
       sfUrl: `${sfInstance}/${a.Id}`
     });
 
