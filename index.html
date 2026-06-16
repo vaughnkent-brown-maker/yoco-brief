@@ -808,7 +808,8 @@ async function generate() {
 
         // Slack notify the account owner
         const amName = sfData.keyAccountManager || sfData.owner || '';
-        fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName, merchant, briefUrl: 'https://yoco-brief.vercel.app'}) }).catch(()=>{});
+        const briefUrl = `https://yoco-brief.vercel.app/?merchant=${encodeURIComponent(merchant)}&accountId=${encodeURIComponent(sfData.id || '')}`;
+        fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName, merchant, briefUrl}) }).catch(()=>{});
       } else {
         dot('dot-sf','error');
         document.getElementById('sf-status').textContent = sfData.found === false ? 'Not found' : 'Error';
@@ -880,6 +881,18 @@ async function saveToNotion() {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && ['merchant','am'].includes(e.target.id)) generate();
+});
+
+// Auto-generate if URL params present (from Slack notification link)
+window.addEventListener('load', () => {
+  const params = new URLSearchParams(window.location.search);
+  const merchant = params.get('merchant');
+  const accountId = params.get('accountId');
+  if (merchant) {
+    document.getElementById('merchant').value = merchant;
+    if (accountId) window._chosenAccountId = accountId;
+    generate();
+  }
 });
 </script>
 </body>
