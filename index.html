@@ -727,7 +727,7 @@ function showAccountPicker(accounts, merchant, am) {
   picker.style.display = 'block';
   list.innerHTML = accounts.map(a => `
     <div style="border:1px solid #E5E4E0;border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color 0.15s"
-      onclick="selectAccount('${a.id}','${merchant}','${am}')"
+      onclick="selectAccount('${a.id}','${merchant}')"
       onmouseover="this.style.borderColor='#0066FF'" onmouseout="this.style.borderColor='#E5E4E0'">
       <div>
         <p style="font-weight:700;font-size:14px">${a.name}</p>
@@ -737,11 +737,10 @@ function showAccountPicker(accounts, merchant, am) {
     </div>`).join('');
 }
 
-function selectAccount(accountId, merchant, am) {
+function selectAccount(accountId, merchant) {
   window._chosenAccountId = accountId;
   document.getElementById('accountPicker').style.display = 'none';
   document.getElementById('merchant').value = merchant;
-  document.getElementById('am').value = am;
   generate();
 }
 
@@ -809,7 +808,7 @@ async function generate() {
 
         // Slack notify the account owner
         const amName = sfData.keyAccountManager || sfData.owner || '';
-        fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName, merchant}) }).catch(()=>{});
+        fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName, merchant, briefUrl: 'https://yoco-brief.vercel.app'}) }).catch(()=>{});
       } else {
         dot('dot-sf','error');
         document.getElementById('sf-status').textContent = sfData.found === false ? 'Not found' : 'Error';
@@ -823,19 +822,19 @@ async function generate() {
     document.getElementById('rel-status').textContent = `${relevant.length} relevant`;
 
     // AI synthesis
-    const prompt = `Pre-meeting brief for Yoco AM visiting "${merchant}".
+    const prompt = `Yoco AM pre-meeting brief for "${merchant}". Be concise, max 2 sentences per section.
 
-DATA: Industry: ${sfData?.industry||'Unknown'} | Plan: ${sfData?.billingPackage||'Unknown'} | TPV (30d): ${sfData?.tpv30Day?fmt(sfData.tpv30Day):'Unknown'} | Key Account: ${sfData?.isKeyAccount?'Yes':'No'} | City: ${sfData?.city||'Unknown'} | Onboarded: ${sfData?.fullyOnboarded?'Yes':'No'} | Open deals: ${sfData?.openDeals||0} | On Yoco since: ${sfData?.createdDate?new Date(sfData.createdDate).toLocaleDateString('en-ZA'):'Unknown'} | Open tasks: ${sfData?.openTasks?.map(t=>t.subject).join(', ')||'None'} | Cases: ${sfData?.cases?.length||0} total, ${(sfData?.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open | Capital: ${sfData?.capitalStatus||'none taken'} | Terminals: ${sfData?.terminalCount||'?'} | Gateway: ${sfData?.hasGateway||'?'}
-RELEASES: ${relevant.slice(0,3).map(r=>`${r.name} — ${r.talking_point}`).join(' | ')}
+DATA: Plan=${sfData?.billingPackage||'?'} | TPV(30d)=${sfData?.tpv30Day?fmt(sfData.tpv30Day):'?'} | Industry=${sfData?.industry||'?'} | City=${sfData?.city||'?'} | KeyAccount=${sfData?.isKeyAccount?'Yes':'No'} | Since=${sfData?.createdDate?new Date(sfData.createdDate).getFullYear():'?'} | Onboarded=${sfData?.fullyOnboarded?'Yes':'No'} | OpenDeals=${sfData?.openDeals||0} | Cases(6mo)=${sfData?.cases?.length||0} | Capital=${sfData?.capitalStatus||'none'} | Terminals=${sfData?.terminalCount||'?'}
+RELEASES: ${relevant.slice(0,2).map(r=>`${r.name}: ${r.talking_point}`).join(' | ')}
 
-Write in this exact format (be concise, 1-2 sentences per section):
-ACCOUNT SUMMARY: [2 sentences max]
-KEY OPPORTUNITIES: [2 bullets]
-TALKING POINTS: [2 bullets]
+Respond in this exact format:
+ACCOUNT SUMMARY: [2 sentences]
+KEY OPPORTUNITIES: [2 bullets max]
+TALKING POINTS: [2 bullets max]
 WATCH OUTS: [1 bullet]
-RECOMMENDED APPROACH: [1 sentence]`;
+APPROACH: [1 sentence]`;
 
-    const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:1000}) });
+    const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:800}) });
     if (ar.ok) {
       const ad = await ar.json();
       if (ad.text) {
