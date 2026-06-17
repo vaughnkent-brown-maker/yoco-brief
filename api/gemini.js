@@ -21,7 +21,7 @@ export default async function handler(req, res) {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
           body: JSON.stringify({
             model: 'gpt-4o-mini',
-            max_tokens: maxTokens || 1000,
+            max_tokens: maxTokens || 1200,
             temperature: 0.3,
             messages: [{ role: 'user', content: prompt }]
           })
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: maxTokens || 1000, temperature: 0.3 }
+              generationConfig: { maxOutputTokens: maxTokens || 1200, temperature: 0.3 }
             })
           },
           25000

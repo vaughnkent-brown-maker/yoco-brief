@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     // Step 1 — find accounts
     const safeMerchant = merchant.replace(/'/g, "\\'").trim();
     const searchQuery = (term) => query(
-      `SELECT Id, Name, Industry, Type, Phone, BillingCity, BillingCountry, Owner.Name, CreatedDate, LastModifiedDate
+      `SELECT Id, Name, Industry, Type, Phone, BillingCity, BillingCountry, BillingStreet, Owner.Name, CreatedDate, LastModifiedDate
        FROM Account WHERE Name LIKE '%${term}%'
        ORDER BY LastModifiedDate DESC LIMIT 10`
     );
@@ -129,7 +129,7 @@ export default async function handler(req, res) {
       childAccounts = (childData.records || []).map((c, i) => {
         const cd = childCustomResults[i] || {};
         const keys = Object.keys(cd).filter(k => k.endsWith('__c'));
-        const buuidKey = keys.find(k => k.toLowerCase().includes('uuid') || k.toLowerCase().includes('buuid'));
+        const buuidKey = keys.find(k => k.toLowerCase().includes('business_uuid') || k.toLowerCase().includes('business') && k.toLowerCase().includes('uuid')) || keys.find(k => k.toLowerCase().includes('uuid') || k.toLowerCase().includes('buuid'));
         return {
           id: c.Id, name: c.Name, industry: c.Industry, type: c.Type,
           phone: c.Phone, city: c.BillingCity, country: c.BillingCountry,
@@ -148,7 +148,7 @@ export default async function handler(req, res) {
     const allCustomKeys = Object.keys(d).filter(k => k.endsWith('__c'));
     const find = (terms) => allCustomKeys.find(k => terms.every(t => k.toLowerCase().includes(t)));
 
-    const buuidKey = find(['uuid']) || find(['buuid']);
+    const buuidKey = find(['business', 'uuid']) || find(['business_uuid']) || find(['uuid']) || find(['buuid']);
     const keyAccKey = find(['key_account']) || find(['keyaccount']);
     const capitalBalKey = find(['capital', 'balance']);
     const capitalTakenKey = find(['capital', 'amount']) || find(['capital', 'total']) || find(['capital', 'taken']);
@@ -199,6 +199,8 @@ export default async function handler(req, res) {
       found: true,
       id: a.Id, name: a.Name, industry: a.Industry, type: a.Type,
       phone: a.Phone, city: a.BillingCity, country: a.BillingCountry,
+      street: a.BillingStreet || null,
+      fullAddress: a.BillingStreet ? `${a.BillingStreet}, ${a.BillingCity}` : null,
       owner: a.Owner?.Name, createdDate: a.CreatedDate,
       sfUrl: `${sfInstance}/${a.Id}`,
       sfInstance,

@@ -356,7 +356,9 @@ function renderSF(sf) {
     </div>
     <div class="metric">
       <div class="mlabel">Location</div>
-      <div class="mval" style="font-size:14px">${sf.city || '—'}</div>
+      ${sf.fullAddress
+        ? `<div class="mval" style="font-size:13px"><a href="https://www.google.com/maps/search/${encodeURIComponent(sf.fullAddress)}" target="_blank" style="color:#0066FF;text-decoration:none;font-weight:700" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${sf.fullAddress} ↗</a></div>`
+        : `<div class="mval" style="font-size:14px">${sf.city || '—'}</div>`}
       <div class="msub">${sf.industry || '—'}</div>
     </div>`;
 
@@ -371,7 +373,7 @@ function renderSF(sf) {
     <div>
       ${sf.openDeals ? `<div class="ir"><span class="il">Open deals</span><span class="iv">${sf.openDeals}</span></div>` : ''}
       ${sf.wonDeals ? `<div class="ir"><span class="il">Won deals</span><span class="iv">${sf.wonDeals}</span></div>` : ''}
-      ${sf.buuid ? `<div class="ir"><span class="il">BUUID</span><span class="iv"><a href="https://admin.yoco.co.za/businesses/${sf.buuid}/details/" target="_blank" style="font-size:11px;font-family:monospace;color:#0066FF;text-decoration:none">${sf.buuid}</a></span></div>` : ''}
+      ${sf.buuid ? `<div class="ir"><span class="il">Admin</span><span class="iv"><a href="https://admin.yoco.co.za/businesses/${sf.buuid}/details/" target="_blank" style="display:inline-block;background:#1a1a1a;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;text-decoration:none">Open Admin ↗</a></span></div>` : ''}
       ${sf.health ? `<div class="ir"><span class="il">Account Health</span><span class="iv">${sf.health}</span></div>` : ''}
     </div>`;
 
@@ -638,7 +640,14 @@ function renderPreviousTasks(tasks) {
         ${t.id
           ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>`
           : `<p style="font-size:13px;font-weight:600">${t.subject}</p>`}
-        ${t.description ? `<p style="font-size:12px;color:#666;line-height:1.4;margin-top:2px">${t.description.slice(0,150)}${t.description.length>150?'...':''}</p>` : ''}
+        ${t.description ? (() => {
+          // Clean WhatsApp chat logs - strip timestamp/name prefixes
+          let desc = t.description;
+          if (t.subject?.toLowerCase().includes('whatsapp')) {
+            desc = desc.replace(/\[\d{4}\/\d{2}\/\d{2},\s*\d{2}:\d{2}:\d{2}\]\s*[^:]+:\s*/g, '').replace(/\s+/g, ' ').trim();
+          }
+          return `<p style="font-size:12px;color:#555;line-height:1.6;margin-top:3px">${desc.slice(0,400)}${desc.length>400?'...':''}</p>`;
+        })() : ''}
         <p style="font-size:11px;color:#bbb;margin-top:2px">${t.owner||''} · ${t.date||''}</p>
       </div>
       <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#F3F4F6;color:#6B7280;flex-shrink:0;margin-left:10px">${t.status}</span>
@@ -655,11 +664,12 @@ function formatWhatsApp(number) {
 function renderContacts(contacts) {
   const con = document.getElementById('sfContacts');
   if (!contacts?.length) return;
+  const top3 = contacts.filter(c => c.mobile || c.phone).slice(0, 3);
   con.innerHTML = `
     <div class="section">
-      <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Contacts (${contacts.length})</div>
+      <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Contacts (${top3.length}${contacts.length > top3.length ? ` of ${contacts.length}` : ''})</div>
       <div class="contacts-grid">
-        ${contacts.map(c => {
+        ${top3.map(c => {
           const mobile = c.mobile || c.phone;
           const waNumber = formatWhatsApp(mobile);
           return `
@@ -823,19 +833,46 @@ async function generate() {
     document.getElementById('rel-status').textContent = `${relevant.length} relevant`;
 
     // AI synthesis
-    const prompt = `Yoco AM pre-meeting brief for "${merchant}". Be concise, max 2 sentences per section.
+    const prompt = `You are an experienced Yoco Account Manager preparing a detailed pre-meeting brief for "${merchant}".
 
-DATA: Plan=${sfData?.billingPackage||'?'} | TPV(30d)=${sfData?.tpv30Day?fmt(sfData.tpv30Day):'?'} | Industry=${sfData?.industry||'?'} | City=${sfData?.city||'?'} | KeyAccount=${sfData?.isKeyAccount?'Yes':'No'} | Since=${sfData?.createdDate?new Date(sfData.createdDate).getFullYear():'?'} | Onboarded=${sfData?.fullyOnboarded?'Yes':'No'} | OpenDeals=${sfData?.openDeals||0} | Cases(6mo)=${sfData?.cases?.length||0} | Capital=${sfData?.capitalStatus||'none'} | Terminals=${sfData?.terminalCount||'?'}
-RELEASES: ${relevant.slice(0,2).map(r=>`${r.name}: ${r.talking_point}`).join(' | ')}
+ACCOUNT DATA:
+- Plan: ${sfData?.billingPackage||'?'} | 30-day TPV: ${sfData?.tpv30Day?fmt(sfData.tpv30Day):'?'} | Industry: ${sfData?.industry||'?'} | City: ${sfData?.city||'?'}
+- Key Account: ${sfData?.isKeyAccount?'Yes':'No'} | On Yoco since: ${sfData?.createdDate?new Date(sfData.createdDate).getFullYear():'?'} | Fully onboarded: ${sfData?.fullyOnboarded?'Yes':'No'}
+- Open deals: ${sfData?.openDeals||0} | Won deals: ${sfData?.wonDeals||0} | Terminals: ${sfData?.terminalCount||'?'}
+- Capital status: ${sfData?.capitalStatus||'none taken'} | Capital eligible: ${sfData?.capitalEligible?'Yes':'Unknown'}
+- Gateway: ${sfData?.hasGateway||'unknown'} | Segment: ${sfData?.segment||'?'}
+- Open cases (6mo): ${(sfData?.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open, ${sfData?.cases?.length||0} total
+${sfData?.cases?.length ? `- Case topics: ${sfData.cases.slice(0,3).map(c=>c.subject).join(' | ')}` : ''}
+${sfData?.openTasks?.length ? `- Open tasks: ${sfData.openTasks.map(t=>`${t.subject} (due ${t.dueDate||'?'})`).join(', ')}` : ''}
+${sfData?.opportunities?.length ? `- Open opportunities: ${sfData.opportunities.map(o=>`${o.name} — ${o.stage}${o.amount?' ('+fmt(o.amount)+')':''}`).join(' | ')}` : ''}
 
-Respond in this exact format:
-ACCOUNT SUMMARY: [2 sentences]
-KEY OPPORTUNITIES: [2 bullets max]
-TALKING POINTS: [2 bullets max]
-WATCH OUTS: [1 bullet]
-APPROACH: [1 sentence]`;
+PREVIOUS ACTIVITY (last 5 interactions):
+${sfData?.previousTasks?.length ? sfData.previousTasks.map(t=>`- [${t.date}] ${t.subject}: ${(t.description||'').slice(0,200)}`).join('\n') : '- No recent activity recorded'}
 
-    const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:800}) });
+RELEVANT PRODUCT RELEASES:
+${relevant.slice(0,3).map(r=>`- ${r.name}: ${r.talking_point}`).join('\n')}
+
+Write a detailed, specific pre-meeting brief using ALL the context above. Use this format:
+
+ACCOUNT SUMMARY:
+[3-4 sentences covering who they are, their Yoco tenure, TPV performance, and current standing]
+
+PREVIOUS ENGAGEMENT:
+[2-3 bullets summarising key themes from past interactions — what was discussed, what was promised, any follow-ups needed]
+
+KEY OPPORTUNITIES:
+[3-4 bullets on specific commercial opportunities based on their plan, usage, and industry]
+
+TALKING POINTS:
+[3-4 bullets on specific product features or releases to highlight, tied to their industry/context]
+
+RISKS & WATCH OUTS:
+[2-3 bullets on churn signals, overdue tasks, open cases, or retention risks]
+
+RECOMMENDED APPROACH:
+[2-3 sentences on how to frame and structure this meeting for the best outcome]`;
+
+    const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:1200}) });
     if (ar.ok) {
       const ad = await ar.json();
       if (ad.text) {
