@@ -75,44 +75,47 @@ export default async function handler(req, res) {
     const safeMerchant = merchant.replace(/'/g, "\\'").trim();
     const normalizedMerchant = normalize(merchant);
 
+    // SOSL search — accent-insensitive, much better matching
+    const soslSearch = async (term) => {
+      const escaped = term.replace(/[?&|!{}[\]()^~*:\\"'+-]/g, '\\$&');
+      const r = await fetch(`${sfInstance}/services/data/v59.0/search/?q=FIND+{${encodeURIComponent(escaped)}}+IN+NAME+FIELDS+RETURNING+Account(Id,Name,Industry,Type,Phone,BillingCity,BillingCountry,BillingStreet,Owner.Name,CreatedDate,LastModifiedDate)+LIMIT+10`, {
+        headers: { 'Authorization': `Bearer ${sessionId}` }
+      });
+      if (!r.ok) return [];
+      const d = await r.json();
+      return d.searchRecords || [];
+    };
+
     const searchQuery = (term) => query(
       `SELECT Id, Name, Industry, Type, Phone, BillingCity, BillingCountry, BillingStreet, Owner.Name, CreatedDate, LastModifiedDate
        FROM Account WHERE Name LIKE '%${term}%'
        ORDER BY LastModifiedDate DESC LIMIT 10`
     );
 
-    // Try original term first
-    let accountData = await searchQuery(safeMerchant);
-
-    // Try normalized (strips accents from input)
+    // Try SOSL first (handles accents, fuzzy)
+    let soslResults = await soslSearch(safeMerchant).catch(() => []);
+    
+    // Fall back to SOQL if SOSL returns nothing
+    let accountData = { records: soslResults };
+    if (!soslResults.length) {
+      accountData = await searchQuery(safeMerchant);
+    }
     if (!accountData.records?.length) {
       accountData = await searchQuery(normalizedMerchant);
     }
-
-    // Try pairs of words (more specific than single words)
     if (!accountData.records?.length) {
-      const words = normalizedMerchant.split(/\s+/).filter(w => w.length > 2);
-      // Try two-word combinations first (more specific)
-      for (let i = 0; i < words.length - 1; i++) {
-        const r = await searchQuery(`${words[i]} ${words[i+1]}`);
+      const words = normalizedMerchant.split(/\s+/).filter(w => w.length > 2).sort((a,b) => b.length - a.length);
+      for (const word of words) {
+        const r = await searchQuery(word);
         if (r.records?.length) { accountData = r; break; }
-      }
-      // Fall back to individual words (least specific)
-      if (!accountData.records?.length) {
-        // Use the longest/most unique word
-        const sorted = [...words].sort((a,b) => b.length - a.length);
-        for (const word of sorted) {
-          const r = await searchQuery(word);
-          if (r.records?.length) { accountData = r; break; }
-        }
       }
     }
 
-    // Sort: exact/closer matches first
+    // Sort: closer matches first
     if (accountData.records?.length > 1) {
       accountData.records.sort((a, b) => {
         const an = normalize(a.Name), bn = normalize(b.Name);
-        const score = (n) => n === normalizedMerchant ? 0 : n.startsWith(normalizedMerchant.split(' ')[0]) && n.includes(normalizedMerchant.split(' ').slice(-1)[0]) ? 1 : n.includes(normalizedMerchant) ? 2 : 3;
+        const score = (n) => n === normalizedMerchant ? 0 : n.includes(normalizedMerchant) ? 1 : 2;
         return score(an) - score(bn);
       });
     }
