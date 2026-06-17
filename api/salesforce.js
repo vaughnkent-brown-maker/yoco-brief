@@ -71,22 +71,38 @@ export default async function handler(req, res) {
     };
 
     // Step 1 — find accounts
+    const normalize = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase().trim();
     const safeMerchant = merchant.replace(/'/g, "\\'").trim();
+    const normalizedMerchant = normalize(merchant);
+
     const searchQuery = (term) => query(
       `SELECT Id, Name, Industry, Type, Phone, BillingCity, BillingCountry, BillingStreet, Owner.Name, CreatedDate, LastModifiedDate
        FROM Account WHERE Name LIKE '%${term}%'
        ORDER BY LastModifiedDate DESC LIMIT 10`
     );
 
+    // Try original term first, then normalized (strips accents), then word by word
     let accountData = await searchQuery(safeMerchant);
 
-    // If no results, try each word individually (handles partial/typo searches)
+    if (!accountData.records?.length && normalizedMerchant !== safeMerchant.toLowerCase()) {
+      accountData = await searchQuery(normalizedMerchant);
+    }
+
     if (!accountData.records?.length) {
-      const words = safeMerchant.split(/\s+/).filter(w => w.length > 2);
+      const words = normalizedMerchant.split(/\s+/).filter(w => w.length > 2);
       for (const word of words) {
         const r = await searchQuery(word);
         if (r.records?.length) { accountData = r; break; }
       }
+    }
+
+    // Sort: exact/closer matches first
+    if (accountData.records?.length > 1) {
+      accountData.records.sort((a, b) => {
+        const an = normalize(a.Name), bn = normalize(b.Name);
+        const score = (n) => n === normalizedMerchant ? 0 : n.startsWith(normalizedMerchant) ? 1 : n.includes(normalizedMerchant) ? 2 : 3;
+        return score(an) - score(bn);
+      });
     }
 
     const records = accountData.records || [];
