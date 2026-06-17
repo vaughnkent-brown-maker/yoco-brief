@@ -174,15 +174,17 @@ export default async function handler(req, res) {
     const buuidKey = find(['business', 'uuid']) || find(['business_uuid']) || find(['uuid']) || find(['buuid']);
     const keyAccKey = find(['key_account']) || find(['keyaccount']);
     const capitalBalKey = find(['capital', 'balance']);
-    const capitalTakenKey = find(['cash_advance']) || find(['capital', 'amount']) || find(['capital', 'taken']);
-    const capitalStatusKey = find(['last_cash_advance_payout_deduction_state']) || find(['capital', 'status']);
-    const capitalLimitKey = find(['capital_offer_amount']) || find(['capital', 'limit']);
-    const capitalEligKey = find(['capital_offer_amount']) || find(['capital', 'eligible']);
-    const capitalOfferExpiryKey = find(['capital_offer_expiry']);
-    const capitalLastDateKey = find(['last_capital_advance']);
-    const capitalFirstDateKey = find(['first_capital_advance']);
-    const capitalRepeatKey = find(['repeat_advance']) || find(['re_advance']);
-    const capitalProviderKey = find(['active_capital_provider']);
+    const capitalTakenKey = 'Cash_Advance__c';
+    const capitalStatusKey = 'Last_Cash_Advance_Payout_Deduction_State__c';
+    const capitalLimitKey = 'Capital_Offer_Amount__c';
+    const capitalEligKey = 'Capital_Offer_Amount__c';
+    const capitalOfferExpiryKey = 'Capital_Offer_Expiry_Date__c';
+    const capitalLastDateKey = 'Last_Capital_Advance__c';
+    const capitalFirstDateKey = 'First_Capital_Advance__c';
+    const capitalRepeatKey = 'Repeat_Advance_Customer__c';
+    const capitalProviderKey = 'Active_Capital_Provider__c';
+    const capitalTypeKey = 'Active_Capital_Type__c';
+    const capitalNewKey = 'Capital_New_Customer__c';
     const terminalKey = find(['terminal']) || find(['device']);
     const gatewayKey = find(['gateway']) || find(['ecommerce']);
     const connectKey = find(['connect']) || find(['yoco_connect']);
@@ -266,15 +268,17 @@ export default async function handler(req, res) {
       fullyOnboarded: d.Fully_Onboarded__c || null,
       // Capital
       capitalBalance: capitalBalKey ? d[capitalBalKey] : null,
-      capitalTaken: capitalTakenKey ? d[capitalTakenKey] : null,
-      capitalStatus: capitalStatusKey ? d[capitalStatusKey] : null,
-      capitalLimit: capitalLimitKey ? d[capitalLimitKey] : null,
-      capitalEligible: capitalEligKey ? d[capitalEligKey] : null,
-      capitalOfferExpiry: capitalOfferExpiryKey ? d[capitalOfferExpiryKey] : null,
-      capitalLastDate: capitalLastDateKey ? d[capitalLastDateKey] : null,
-      capitalFirstDate: capitalFirstDateKey ? d[capitalFirstDateKey] : null,
-      capitalRepeat: capitalRepeatKey ? d[capitalRepeatKey] : null,
-      capitalProvider: capitalProviderKey ? d[capitalProviderKey] : null,
+      capitalTaken: d[capitalTakenKey] || null,
+      capitalStatus: d[capitalStatusKey] || null,
+      capitalLimit: d[capitalLimitKey] || null,
+      capitalEligible: d[capitalEligKey] || null,
+      capitalOfferExpiry: d[capitalOfferExpiryKey] || null,
+      capitalLastDate: d[capitalLastDateKey] || null,
+      capitalFirstDate: d[capitalFirstDateKey] || null,
+      capitalRepeat: d[capitalRepeatKey] || null,
+      capitalProvider: d[capitalProviderKey] || null,
+      capitalType: d[capitalTypeKey] || null,
+      capitalNewCustomer: d[capitalNewKey] || null,
       // Products
       terminalCount: terminalKey ? d[terminalKey] : null,
       hasGateway: gatewayKey ? d[gatewayKey] : null,
