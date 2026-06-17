@@ -299,7 +299,7 @@ export default async function handler(req, res) {
       fullyOnboarded: d.Fully_Onboarded__c || null,
       // Capital
       capitalBalance: capitalBalKey ? d[capitalBalKey] : null,
-      capitalTaken: d[capitalTakenKey] || null,
+      capitalTaken: d[capitalTakenKey] && !isNaN(parseFloat(d[capitalTakenKey])) ? parseFloat(d[capitalTakenKey]) : null,
       capitalStatus: d[capitalStatusKey] || null,
       capitalLimit: d[capitalLimitKey] || null,
       capitalEligible: d[capitalEligKey] || null,
