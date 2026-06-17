@@ -54,8 +54,33 @@ export default async function handler(req, res) {
       const r = await fetch(`${sfInstance}/services/data/v59.0/sobjects/Account/${id}`, {
         headers: { 'Authorization': `Bearer ${sessionId}` }
       });
-      if (!r.ok) return {};
+      if (!r.ok) {
+        console.error('getRecord failed:', r.status, await r.text().catch(()=>''));
+        return {};
+      }
       return r.json();
+    };
+
+    // Also fetch full record via describe to get all fields as fallback
+    const getRecordWithFallback = async (id) => {
+      const d = await getRecord(id);
+      if (d && Object.keys(d).some(k => k.endsWith('__c'))) return d;
+      // Fallback: query known capital/rate fields directly
+      try {
+        const fallback = await query(`SELECT Id, ${[
+          'Yoco_Capital_Taken__c','Capital_Taken__c','Capital_Amount__c',
+          'Capital_Balance__c','Capital_Outstanding__c','Capital_Status__c',
+          'Capital_Eligible__c','Capital_Limit__c','Capital_Offer__c',
+          'Capital_Date__c','Capital_Last_Taken__c','Capital_Repaid__c',
+          'Transaction_Rate__c','Debit_Rate__c','Credit_Rate__c',
+          'Billing_Package__c','Segment__c','Health__c',
+          'X30_Day_TPV__c','Fully_Onboarded__c','Open_deals__c',
+          'Won_deals__c','Lost_deals__c','Business_Uuid__c',
+          'Intercom_User_ID__c','Key_Account__c','Terminal_Count__c',
+          'Has_Gateway__c','Has_Savings__c','Integrations__c'
+        ].join(', ')} FROM Account WHERE Id = '${id}' LIMIT 1`);
+        return fallback.records?.[0] || d;
+      } catch(e) { return d; }
     };
 
     // Step 1 — find accounts
@@ -98,7 +123,7 @@ export default async function handler(req, res) {
     const safeQuery = async (soql) => { try { return await query(soql); } catch(e) { return { records: [] }; } };
 
     const [customData, prevTasksData, openTasksData, contactsData, oppsData, casesData, bankData] = await Promise.all([
-      getRecord(a.Id).catch(() => ({})),
+      getRecordWithFallback(a.Id).catch(() => ({})),
       safeQuery(`SELECT Id, Subject, Description, Status, Priority, ActivityDate, CreatedDate, Owner.Name
              FROM Task WHERE WhatId = '${a.Id}' AND IsClosed = true
              ORDER BY CreatedDate DESC LIMIT 5`),
