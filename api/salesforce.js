@@ -157,6 +157,12 @@ export default async function handler(req, res) {
     const capitalEligKey = find(['capital', 'eligible']);
     const terminalKey = find(['terminal']) || find(['device']);
     const gatewayKey = find(['gateway']) || find(['ecommerce']);
+    const connectKey = find(['connect']) || find(['yoco_connect']);
+    const shopifyKey = find(['shopify']);
+    const wooKey = find(['woocommerce']) || find(['woo']);
+    const zapierKey = find(['zapier']);
+    const invoicingKey = find(['invoic']);
+    const bookingsKey = find(['booking']);
     const savingsKey = find(['saving']);
     const lastTransKey = find(['last', 'transaction']);
     const riskKey = find(['risk']) || find(['churn']);
@@ -237,6 +243,12 @@ export default async function handler(req, res) {
       // Products
       terminalCount: terminalKey ? d[terminalKey] : null,
       hasGateway: gatewayKey ? d[gatewayKey] : null,
+      hasConnect: connectKey ? d[connectKey] : null,
+      hasShopify: shopifyKey ? d[shopifyKey] : null,
+      hasWoo: wooKey ? d[wooKey] : null,
+      hasZapier: zapierKey ? d[zapierKey] : null,
+      hasInvoicing: invoicingKey ? d[invoicingKey] : null,
+      hasBookings: bookingsKey ? d[bookingsKey] : null,
       hasSavings: savingsKey ? d[savingsKey] : null,
       lastTransaction: lastTransKey ? d[lastTransKey] : null,
       riskFlag: riskKey ? d[riskKey] : null,

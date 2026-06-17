@@ -337,6 +337,21 @@ function fmt(n) { return n ? 'R' + Number(n).toLocaleString('en-ZA') : '—'; }
 function renderSF(sf) {
   document.getElementById('sfSection').style.display = 'block';
 
+  // Try extract rate from previous activity notes
+  let inferredRate = null;
+  if (!sf.transactionRate && sf.previousTasks?.length) {
+    for (const t of sf.previousTasks) {
+      const text = ((t.description || '') + ' ' + (t.subject || '')).toLowerCase();
+      const match = text.match(/(\d+[\.,]?\d*)\s*%/) || text.match(/rate[^\d]*(\d+[\.,]?\d*)/i);
+      if (match) { inferredRate = match[1].replace(',','.') + '%'; break; }
+    }
+  }
+  const rateDisplay = sf.transactionRate
+    ? `<div class="msub" style="color:#D97706;font-weight:600">Rate: ${sf.transactionRate}</div>`
+    : inferredRate
+      ? `<div class="msub" style="color:#D97706;font-weight:600">~${inferredRate} <span style="font-weight:400;color:#aaa;font-size:9px">from notes — confirm</span></div>`
+      : '<div class="msub" style="color:#bbb">Rate: not on SF</div>';
+
   // Top metrics — TPV big, key account, billing, location
   document.getElementById('sfMetrics').innerHTML = `
     <div class="metric">
@@ -347,7 +362,7 @@ function renderSF(sf) {
     <div class="metric">
       <div class="mlabel">Billing Package</div>
       <div class="mval" style="font-size:15px">${sf.billingPackage || '—'}</div>
-      ${sf.transactionRate ? `<div class="msub" style="color:#D97706;font-weight:600">Rate: ${sf.transactionRate}</div>` : '<div class="msub">Rate: not on SF</div>'}
+      ${rateDisplay}
     </div>
     <div class="metric">
       <div class="mlabel">Key Account</div>
@@ -433,6 +448,12 @@ function renderProducts(sf) {
     { label:'Yoco Savings', value:savingsVal, bg:savingsVal==='Active'?'#DCFCE7':'#F3F4F6', color:savingsVal==='Active'?'#16A34A':'#6B7280' },
     { label:'Segment', value:sf.segment, bg:'#F5F3FF', color:'#7C3AED' },
     { label:'Transaction Rate', value:sf.transactionRate || null, bg:'#FEF3C7', color:'#D97706' },
+    { label:'Yoco Connect', value:sf.hasConnect ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Shopify', value:sf.hasShopify ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'WooCommerce', value:sf.hasWoo ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Zapier', value:sf.hasZapier ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Invoicing', value:sf.hasInvoicing ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Bookings', value:sf.hasBookings ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
   ].filter(p => p.value !== null && p.value !== undefined && p.value !== '');
 
   con.innerHTML = products.length
@@ -464,19 +485,7 @@ function renderOpportunities(sf) {
     'Closed Won': '#DCFCE7', 'Closed Lost': '#FEF2F2'
   };
 
-  // Outstanding tasks banner
-  const overdue = (sf.openTasks || []).filter(t => t.dueDate && new Date(t.dueDate) < new Date());
-  const dueSoon = (sf.openTasks || []).filter(t => t.dueDate && new Date(t.dueDate) >= new Date() && new Date(t.dueDate) <= new Date(Date.now() + 7*24*60*60*1000));
-
-  const bannerHtml = overdue.length ? `
-    <div class="banner banner-alert" style="margin-bottom:12px">
-      🚨 <strong>${overdue.length} overdue task${overdue.length>1?'s':''}</strong>: ${overdue.map(t=>t.subject).join(', ')}
-    </div>` : dueSoon.length ? `
-    <div class="banner banner-warn" style="margin-bottom:12px">
-      ⏰ <strong>${dueSoon.length} task${dueSoon.length>1?'s':''} due this week</strong>: ${dueSoon.map(t=>t.subject).join(', ')}
-    </div>` : '';
-
-  con.innerHTML = bannerHtml + opps.map(o => {
+  con.innerHTML = opps.map(o => {
     const isOverdue = o.closeDate && new Date(o.closeDate) < new Date();
     return `
     <div style="border:1px solid ${isOverdue?'#FECACA':'#E5E4E0'};border-radius:10px;padding:14px 16px;margin-bottom:8px;background:${isOverdue?'#FFF5F5':'#fff'}">
@@ -803,6 +812,7 @@ async function generate() {
         const owner = sfData.keyAccountManager || sfData.owner || '—';
         dot('dot-sf','live');
         document.getElementById('sf-status').textContent = 'Live';
+        document.getElementById('briefTitle').textContent = sfData.name || merchant;
         document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${owner}`;
         renderSF(sfData);
         renderTasks(sfData);
