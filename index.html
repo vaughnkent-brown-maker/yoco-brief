@@ -196,6 +196,7 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
         </div>
         <div class="brief-hdr-actions">
           <button class="btn-sf" id="hSfBtn" onclick="openSalesforce()">View in Salesforce</button>
+          <button class="btn-sf" id="hAdminBtn" onclick="openAdmin()" style="background:#1a1a1a;display:none">Open Admin ↗</button>
           <button class="btn-save" id="saveBtn" onclick="saveToNotion()">Save to Notion</button>
         </div>
       </div>
@@ -345,9 +346,12 @@ function dot(id, state) {
   if (el) el.className = 'pdot' + (state ? ' ' + state : '');
 }
 function openSalesforce() { window.open(_sf?.sfUrl || 'https://yoco.lightning.force.com', '_blank'); }
+function openAdmin() { if (_sf?.buuid) window.open(`https://admin.yoco.co.za/businesses/${_sf.buuid}/details/`, '_blank'); }
 function activateBtns() {
   const b = document.getElementById('hSfBtn');
   if (b) b.classList.add('active');
+  const a = document.getElementById('hAdminBtn');
+  if (a && _sf?.buuid) { a.style.display = 'flex'; a.classList.add('active'); }
 }
 
 function getRelevant(industry) {
@@ -433,7 +437,6 @@ function renderSF(sf) {
     <div>
       ${sf.openDeals ? `<div class="ir"><span class="il">Open deals</span><span class="iv">${sf.openDeals}</span></div>` : ''}
       ${sf.wonDeals ? `<div class="ir"><span class="il">Won deals</span><span class="iv">${sf.wonDeals}</span></div>` : ''}
-      ${sf.buuid ? `<div class="ir"><span class="il">Admin</span><span class="iv"><a href="https://admin.yoco.co.za/businesses/${sf.buuid}/details/" target="_blank" style="display:inline-block;background:#1a1a1a;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;text-decoration:none">Open Admin ↗</a></span></div>` : ''}
       ${sf.bank ? `<div class="ir"><span class="il">Bank</span><span class="iv">${sf.bank.name}${sf.bank.type ? ` · ${sf.bank.type}` : ''}</span></div>` : ''}
       ${sf.health ? `<div class="ir"><span class="il">Account Health</span><span class="iv">${sf.health}</span></div>` : ''}
     </div>`;
@@ -903,14 +906,15 @@ async function generate() {
     document.getElementById('rel-status').textContent = `${relevant.length} relevant`;
 
     // AI synthesis
-    const prompt = `You are an experienced Yoco Account Manager preparing a detailed pre-meeting brief for "${merchant}".
+    const prompt = `You are an experienced Yoco Account Manager preparing a detailed pre-meeting brief for "${merchant}". Be specific and intelligent — do NOT recommend products, plans or features the merchant already has.
 
 ACCOUNT DATA:
 - Plan: ${sfData?.billingPackage||'?'} | 30-day TPV: ${sfData?.tpv30Day?fmt(sfData.tpv30Day):'?'} | Industry: ${sfData?.industry||'?'} | City: ${sfData?.city||'?'}
 - Key Account: ${sfData?.isKeyAccount?'Yes':'No'} | On Yoco since: ${sfData?.createdDate?new Date(sfData.createdDate).getFullYear():'?'} | Fully onboarded: ${sfData?.fullyOnboarded?'Yes':'No'}
 - Open deals: ${sfData?.openDeals||0} | Won deals: ${sfData?.wonDeals||0} | Terminals: ${sfData?.terminalCount||'?'}
-- Capital status: ${sfData?.capitalStatus||'none taken'} | Capital eligible: ${sfData?.capitalEligible?'Yes':'Unknown'}
-- Gateway: ${sfData?.hasGateway||'unknown'} | Segment: ${sfData?.segment||'?'}
+- Capital status: ${sfData?.capitalStatus||'none taken'} | Capital offer: ${sfData?.capitalLimit?fmt(sfData.capitalLimit):'none'} | Capital eligible: ${sfData?.capitalEligible?'Yes':'Unknown'}
+- Gateway: ${sfData?.hasGateway||'unknown'} | Savings: ${sfData?.hasSavings||'unknown'} | Segment: ${sfData?.segment||'?'}
+- Integrations: ${sfData?.integrations||'none on file'}
 - Open cases (6mo): ${(sfData?.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open, ${sfData?.cases?.length||0} total
 ${sfData?.cases?.length ? `- Case topics: ${sfData.cases.slice(0,3).map(c=>c.subject).join(' | ')}` : ''}
 ${sfData?.openTasks?.length ? `- Open tasks: ${sfData.openTasks.map(t=>`${t.subject} (due ${t.dueDate||'?'})`).join(', ')}` : ''}
@@ -922,25 +926,37 @@ ${sfData?.previousTasks?.length ? sfData.previousTasks.slice(0,3).map(t=>`- [${t
 RELEVANT PRODUCT RELEASES:
 ${relevant.slice(0,3).map(r=>`- ${r.name}: ${r.talking_point}`).join('\n')}
 
-Write a detailed, specific pre-meeting brief using ALL the context above. Use this format:
+CRITICAL RULES:
+- Merchant is on ${sfData?.billingPackage||'unknown'} plan — do NOT suggest upgrading to a plan they already have
+- Only suggest features/products they don't currently have
+- Integrations on file: ${sfData?.integrations||'none'} — if they use a competitor POS (iKentoo, Lightspeed, Square, Toast, etc), pitch Yoco POS as a replacement
+- If they use third-party tools (Shopify, WooCommerce, etc), pitch Yoco Connect or Yoco Gateway as a native replacement
+- If they don't use Yoco Savings, pitch it
+- If they don't use Yoco Capital and have an offer, pitch it
+- Base ALL advice on the actual data above, not generic templates
+- If TPV is strong, acknowledge it specifically with the actual number
+- If there are open cases, address them as a risk
+- If there are overdue tasks, flag them explicitly
+
+Write a detailed pre-meeting brief using this format:
 
 ACCOUNT SUMMARY:
-[3-4 sentences covering who they are, their Yoco tenure, TPV performance, and current standing]
+[3-4 sentences — who they are, TPV performance, current plan, how long on Yoco]
 
 PREVIOUS ENGAGEMENT:
-[2-3 bullets summarising key themes from past interactions — what was discussed, what was promised, any follow-ups needed]
+[2-3 bullets — key themes from past interactions, any follow-ups owed]
 
 KEY OPPORTUNITIES:
-[3-4 bullets on specific commercial opportunities based on their plan, usage, and industry]
+[3 bullets — specific to their situation, NOT things they already have]
 
 TALKING POINTS:
-[3-4 bullets on specific product features or releases to highlight, tied to their industry/context]
+[3 bullets — specific product releases or features relevant to their industry/plan]
 
 RISKS & WATCH OUTS:
-[2-3 bullets on churn signals, overdue tasks, open cases, or retention risks]
+[2 bullets — churn signals, overdue items, open cases]
 
 RECOMMENDED APPROACH:
-[2-3 sentences on how to frame and structure this meeting for the best outcome]`;
+[2 sentences — how to frame this specific meeting]`;
 
     const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:1200}) });
     if (ar.ok) {
