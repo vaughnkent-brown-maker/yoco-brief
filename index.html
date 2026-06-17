@@ -563,7 +563,7 @@ function renderOpportunities(sf) {
 function renderCapital(sf) {
   const sec = document.getElementById('capitalSection');
   const con = document.getElementById('capitalContent');
-  const hasData = sf.capitalBalance !== null || sf.capitalTaken !== null || sf.capitalStatus !== null || sf.capitalEligible !== null;
+  const hasData = sf.capitalBalance !== null || sf.capitalTaken !== null || sf.capitalStatus !== null || sf.capitalEligible !== null || sf.capitalLimit !== null;
 
   sec.style.display = 'block';
   if (!hasData) {
@@ -572,17 +572,24 @@ function renderCapital(sf) {
   }
 
   const statusColor = { 'Active':'#16A34A','Offered':'#D97706','Repaid':'#6B7280','Overdue':'#DC2626','Eligible':'#2563EB' };
+  const isRepaid = sf.capitalStatus?.toLowerCase().includes('repaid') || sf.capitalStatus?.toLowerCase().includes('paid');
+  const hasOffer = sf.capitalLimit && parseFloat(sf.capitalLimit) > 0;
+
   con.innerHTML = `
-    <div class="metrics-3" style="margin-bottom:10px">
-      ${sf.capitalStatus ? `<div class="metric"><div class="mlabel">Status</div><div class="mval" style="color:${statusColor[sf.capitalStatus]||'#1a1a1a'}">${sf.capitalStatus}</div></div>` : ''}
-      ${sf.capitalTaken ? `<div class="metric"><div class="mlabel">Capital Taken</div><div class="mval">${fmt(sf.capitalTaken)}</div></div>` : ''}
+    <div class="metrics" style="margin-bottom:12px">
+      ${sf.capitalTaken ? `<div class="metric"><div class="mlabel">Capital Taken</div><div class="mval">${fmt(sf.capitalTaken)}</div>${sf.capitalFirstDate ? `<div class="msub">First: ${sf.capitalFirstDate.split('T')[0]}</div>` : ''}</div>` : ''}
       ${sf.capitalBalance ? `<div class="metric"><div class="mlabel">Outstanding</div><div class="mval">${fmt(sf.capitalBalance)}</div></div>` : ''}
-      ${sf.capitalLimit ? `<div class="metric"><div class="mlabel">Limit</div><div class="mval">${fmt(sf.capitalLimit)}</div></div>` : ''}
-      ${sf.capitalEligible !== null ? `<div class="metric"><div class="mlabel">Eligible</div><div class="mval">${sf.capitalEligible ? '✅ Yes' : '❌ No'}</div></div>` : ''}
+      ${sf.capitalLimit ? `<div class="metric"><div class="mlabel">Offer Amount</div><div class="mval" style="color:${hasOffer?'#7C3AED':'#1a1a1a'}">${fmt(sf.capitalLimit)}</div>${sf.capitalOfferExpiry ? `<div class="msub">Expires: ${sf.capitalOfferExpiry.split('T')[0]}</div>` : ''}</div>` : ''}
+      ${sf.capitalStatus ? `<div class="metric"><div class="mlabel">Status</div><div class="mval" style="font-size:13px;color:${statusColor[sf.capitalStatus]||'#1a1a1a'}">${sf.capitalStatus}</div>${sf.capitalProvider ? `<div class="msub">via ${sf.capitalProvider}</div>` : ''}</div>` : ''}
     </div>
-    ${sf.capitalStatus === 'Active' ? `<div class="banner banner-warn">⚠️ <strong>Active Capital loan</strong> — be mindful of repayment deductions when discussing TPV trends.</div>` : ''}
-    ${sf.capitalStatus === 'Overdue' ? `<div class="banner banner-alert">🚨 <strong>Overdue Capital</strong> — handle with care, escalate if needed.</div>` : ''}
-    ${sf.capitalEligible && !sf.capitalStatus ? `<div class="banner banner-info">💡 <strong>Capital opportunity</strong> — eligible but hasn't taken Capital. Good conversation to have.</div>` : ''}`;
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px;font-size:12px;color:#666">
+      ${sf.capitalLastDate ? `<span>Last advance: <strong style="color:#1a1a1a">${sf.capitalLastDate.split('T')[0]}</strong></span>` : ''}
+      ${sf.capitalRepeat ? `<span>Repeat customer: <strong style="color:#16A34A">✅ Yes</strong></span>` : ''}
+    </div>
+    ${sf.capitalStatus?.toLowerCase().includes('active') ? `<div class="banner banner-warn">⚠️ <strong>Active Capital loan</strong> — be mindful of repayment deductions when discussing TPV trends.</div>` : ''}
+    ${sf.capitalStatus?.toLowerCase().includes('overdue') ? `<div class="banner banner-alert">🚨 <strong>Overdue Capital</strong> — handle with care, escalate if needed.</div>` : ''}
+    ${hasOffer && !sf.capitalStatus?.toLowerCase().includes('active') ? `<div class="banner banner-info">💡 <strong>Capital offer available: ${fmt(sf.capitalLimit)}</strong>${sf.capitalOfferExpiry ? ` — expires ${sf.capitalOfferExpiry.split('T')[0]}` : ''}. Raise this in the meeting.</div>` : ''}
+    ${isRepaid && hasOffer ? `<div class="banner banner-ok">✅ <strong>Previous Capital repaid</strong> — great time to discuss a new advance of ${fmt(sf.capitalLimit)}.</div>` : ''}`;
 }
 
 function renderIntercom(sf) {

@@ -174,10 +174,15 @@ export default async function handler(req, res) {
     const buuidKey = find(['business', 'uuid']) || find(['business_uuid']) || find(['uuid']) || find(['buuid']);
     const keyAccKey = find(['key_account']) || find(['keyaccount']);
     const capitalBalKey = find(['capital', 'balance']);
-    const capitalTakenKey = find(['capital', 'amount']) || find(['capital', 'total']) || find(['capital', 'taken']);
-    const capitalStatusKey = find(['capital', 'status']);
-    const capitalLimitKey = find(['capital', 'limit']);
-    const capitalEligKey = find(['capital', 'eligible']);
+    const capitalTakenKey = find(['cash_advance']) || find(['capital', 'amount']) || find(['capital', 'taken']);
+    const capitalStatusKey = find(['last_cash_advance_payout_deduction_state']) || find(['capital', 'status']);
+    const capitalLimitKey = find(['capital_offer_amount']) || find(['capital', 'limit']);
+    const capitalEligKey = find(['capital_offer_amount']) || find(['capital', 'eligible']);
+    const capitalOfferExpiryKey = find(['capital_offer_expiry']);
+    const capitalLastDateKey = find(['last_capital_advance']);
+    const capitalFirstDateKey = find(['first_capital_advance']);
+    const capitalRepeatKey = find(['repeat_advance']) || find(['re_advance']);
+    const capitalProviderKey = find(['active_capital_provider']);
     const terminalKey = find(['terminal']) || find(['device']);
     const gatewayKey = find(['gateway']) || find(['ecommerce']);
     const connectKey = find(['connect']) || find(['yoco_connect']);
@@ -265,6 +270,11 @@ export default async function handler(req, res) {
       capitalStatus: capitalStatusKey ? d[capitalStatusKey] : null,
       capitalLimit: capitalLimitKey ? d[capitalLimitKey] : null,
       capitalEligible: capitalEligKey ? d[capitalEligKey] : null,
+      capitalOfferExpiry: capitalOfferExpiryKey ? d[capitalOfferExpiryKey] : null,
+      capitalLastDate: capitalLastDateKey ? d[capitalLastDateKey] : null,
+      capitalFirstDate: capitalFirstDateKey ? d[capitalFirstDateKey] : null,
+      capitalRepeat: capitalRepeatKey ? d[capitalRepeatKey] : null,
+      capitalProvider: capitalProviderKey ? d[capitalProviderKey] : null,
       // Products
       terminalCount: terminalKey ? d[terminalKey] : null,
       hasGateway: gatewayKey ? d[gatewayKey] : null,
