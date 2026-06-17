@@ -196,7 +196,7 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
         </div>
         <div class="brief-hdr-actions">
           <button class="btn-sf" id="hSfBtn" onclick="openSalesforce()">View in Salesforce</button>
-          <button class="btn-sf" id="hAdminBtn" onclick="openAdmin()" style="background:#1a1a1a;display:none">Admin</button>
+          <button id="hAdminBtn" onclick="openAdmin()" style="display:none;height:34px;padding:0 14px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Admin</button>
           <button class="btn-save" id="saveBtn" onclick="saveToNotion()">Save to Notion</button>
         </div>
       </div>
@@ -351,7 +351,7 @@ function activateBtns() {
   const b = document.getElementById('hSfBtn');
   if (b) b.classList.add('active');
   const a = document.getElementById('hAdminBtn');
-  if (a && _sf?.buuid) { a.style.display = 'flex'; a.classList.add('active'); }
+  if (a && _sf?.buuid) { a.style.display = 'block'; }
 }
 
 function getRelevant(industry) {
