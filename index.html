@@ -348,7 +348,7 @@ function renderSF(sf) {
         if (dm) inferredDebit = dm[1].replace(',','.') + '%';
       }
       if (!inferredCredit) {
-        const cm = text.match(/credit[^\d]*(\d+[\.,]\d+)\s*%/i) || text.match(/(\d+[\.,]\d+)\s*%[^\d]*credit/i);
+        const cm = text.match(/credit[^\d]*(\d+[\.,]\d+)\s*%/i) || text.match(/(\d+[\.,]\d+)\s*%[^\d]*credit/i) || text.match(/amex[^\d]*(\d+[\.,]\d+)\s*%/i) || text.match(/(\d+[\.,]\d+)\s*%[^\d]*amex/i);
         if (cm) inferredCredit = cm[1].replace(',','.') + '%';
       }
       if (inferredDebit && inferredCredit) break;
