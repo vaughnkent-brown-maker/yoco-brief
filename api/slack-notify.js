@@ -12,15 +12,19 @@ export default async function handler(req, res) {
   // Hardcoded Slack user IDs for each AM — avoids expensive users.list lookup
   // Get your ID from Slack: click your profile -> ... -> Copy member ID
   const AM_IDS = {
-    'vaughn kent-brown': process.env.SLACK_USER_ID_VAUGHN || '',
-    'bianca muratu': process.env.SLACK_USER_ID_BIANCA || '',
-    'diaan wiese': process.env.SLACK_USER_ID_DIAAN || '',
-    'melissa barnes': process.env.SLACK_USER_ID_MELISSA || '',
-    'lebohang mdakane': process.env.SLACK_USER_ID_LEBO || '',
-    'nomahlubi madikgetla': process.env.SLACK_USER_ID_NOMAHLUBI || '',
-    'katlego ramasodi': process.env.SLACK_USER_ID_KATLEGO || '',
-    'kylé steyn': process.env.SLACK_USER_ID_KYLE || '',
-    'kyle steyn': process.env.SLACK_USER_ID_KYLE || ''
+    'vaughn kent-brown': process.env.SLACK_USER_ID_VAUGHN || 'U07PH1Y3HEV',
+    'bianca muratu': process.env.SLACK_USER_ID_BIANCA || 'U078XS2H69H',
+    'diaan wiese': process.env.SLACK_USER_ID_DIAAN || 'U07A673QZCJ',
+    'melissa barnes': process.env.SLACK_USER_ID_MELISSA || 'U07R7S5TJFL',
+    'lebohang mdakane': process.env.SLACK_USER_ID_LEBO || 'U08Q8A20TAR',
+    'nomahlubi madikgetla': process.env.SLACK_USER_ID_NOMAHLUBI || 'U0A7H0TGTAP',
+    'katlego ramasodi': process.env.SLACK_USER_ID_KATLEGO || 'U087XPGRE9Z',
+    'kylé steyn': process.env.SLACK_USER_ID_KYLE || 'U08U3CPD571',
+    'kyle steyn': process.env.SLACK_USER_ID_KYLE || 'U08U3CPD571',
+    'danica davids': 'U07MRG8EFH6',
+    'benita nelson': 'U08QV7U7N0P',
+    'sesethu time': 'U07CU98LX40',
+    'leeroy february': 'UCL26KSJW'
   };
 
   const userId = AM_IDS[amName.toLowerCase()];
