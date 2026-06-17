@@ -81,18 +81,30 @@ export default async function handler(req, res) {
        ORDER BY LastModifiedDate DESC LIMIT 10`
     );
 
-    // Try original term first, then normalized (strips accents), then word by word
+    // Try original term first
     let accountData = await searchQuery(safeMerchant);
 
-    if (!accountData.records?.length && normalizedMerchant !== safeMerchant.toLowerCase()) {
+    // Try normalized (strips accents from input)
+    if (!accountData.records?.length) {
       accountData = await searchQuery(normalizedMerchant);
     }
 
+    // Try pairs of words (more specific than single words)
     if (!accountData.records?.length) {
       const words = normalizedMerchant.split(/\s+/).filter(w => w.length > 2);
-      for (const word of words) {
-        const r = await searchQuery(word);
+      // Try two-word combinations first (more specific)
+      for (let i = 0; i < words.length - 1; i++) {
+        const r = await searchQuery(`${words[i]} ${words[i+1]}`);
         if (r.records?.length) { accountData = r; break; }
+      }
+      // Fall back to individual words (least specific)
+      if (!accountData.records?.length) {
+        // Use the longest/most unique word
+        const sorted = [...words].sort((a,b) => b.length - a.length);
+        for (const word of sorted) {
+          const r = await searchQuery(word);
+          if (r.records?.length) { accountData = r; break; }
+        }
       }
     }
 
@@ -100,7 +112,7 @@ export default async function handler(req, res) {
     if (accountData.records?.length > 1) {
       accountData.records.sort((a, b) => {
         const an = normalize(a.Name), bn = normalize(b.Name);
-        const score = (n) => n === normalizedMerchant ? 0 : n.startsWith(normalizedMerchant) ? 1 : n.includes(normalizedMerchant) ? 2 : 3;
+        const score = (n) => n === normalizedMerchant ? 0 : n.startsWith(normalizedMerchant.split(' ')[0]) && n.includes(normalizedMerchant.split(' ').slice(-1)[0]) ? 1 : n.includes(normalizedMerchant) ? 2 : 3;
         return score(an) - score(bn);
       });
     }
