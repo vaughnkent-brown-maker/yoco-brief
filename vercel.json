@@ -1,25 +1,11 @@
 {
   "functions": {
-    "api/notion-save.js": {
-      "maxDuration": 30
-    },
-    "api/gemini.js": {
-      "maxDuration": 60
-    },
-    "api/slack-search.js": {
-      "maxDuration": 30
-    },
-    "api/slack-notify.js": {
-      "maxDuration": 30
-    },
-    "api/notion-save.js": {
-      "maxDuration": 30
-    },
-    "api/notion-search.js": {
-      "maxDuration": 30
-    },
-    "api/salesforce.js": {
-      "maxDuration": 30
-    }
+    "api/gemini.js": { "maxDuration": 60 },
+    "api/salesforce.js": { "maxDuration": 30 },
+    "api/salesforce-task.js": { "maxDuration": 30 },
+    "api/notion-save.js": { "maxDuration": 30 },
+    "api/notion-search.js": { "maxDuration": 30 },
+    "api/slack-notify.js": { "maxDuration": 30 },
+    "api/slack-search.js": { "maxDuration": 30 }
   }
 }

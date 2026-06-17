@@ -97,7 +97,7 @@ export default async function handler(req, res) {
     // Step 2 — run all secondary queries IN PARALLEL
     const safeQuery = async (soql) => { try { return await query(soql); } catch(e) { return { records: [] }; } };
 
-    const [customData, prevTasksData, openTasksData, contactsData, oppsData, casesData] = await Promise.all([
+    const [customData, prevTasksData, openTasksData, contactsData, oppsData, casesData, bankData] = await Promise.all([
       getRecord(a.Id).catch(() => ({})),
       safeQuery(`SELECT Id, Subject, Description, Status, Priority, ActivityDate, CreatedDate, Owner.Name
              FROM Task WHERE WhatId = '${a.Id}' AND IsClosed = true
@@ -113,7 +113,9 @@ export default async function handler(req, res) {
              ORDER BY CloseDate ASC LIMIT 5`),
       safeQuery(`SELECT Id, CaseNumber, Subject, Status, Priority, CreatedDate, ClosedDate, Description, Origin
              FROM Case WHERE AccountId = '${a.Id}' AND CreatedDate >= LAST_N_MONTHS:6
-             ORDER BY CreatedDate DESC LIMIT 10`)
+             ORDER BY CreatedDate DESC LIMIT 10`),
+      safeQuery(`SELECT Id, bank__c, accountHolder__c, accountNumber__c, accountType__c, branchCode__c
+             FROM Bank_Account__c WHERE Account__c = '${a.Id}' LIMIT 1`)
     ]);
 
     // Child accounts (only if group account requested)
@@ -163,6 +165,8 @@ export default async function handler(req, res) {
     const zapierKey = find(['zapier']);
     const invoicingKey = find(['invoic']);
     const bookingsKey = find(['booking']);
+    const integrationsKey = find(['integration']) || find(['integrations']);
+    const websitePluginsKey = find(['website', 'plugin']) || find(['plugin']);
     const savingsKey = find(['saving']);
     const lastTransKey = find(['last', 'transaction']);
     const riskKey = find(['risk']) || find(['churn']);
@@ -249,6 +253,14 @@ export default async function handler(req, res) {
       hasZapier: zapierKey ? d[zapierKey] : null,
       hasInvoicing: invoicingKey ? d[invoicingKey] : null,
       hasBookings: bookingsKey ? d[bookingsKey] : null,
+      integrations: integrationsKey ? d[integrationsKey] : null,
+      websitePlugins: websitePluginsKey ? d[websitePluginsKey] : null,
+      bank: bankData.records?.[0] ? {
+        name: bankData.records[0].bank__c,
+        holder: bankData.records[0].accountHolder__c,
+        type: bankData.records[0].accountType__c,
+        branch: bankData.records[0].branchCode__c
+      } : null,
       hasSavings: savingsKey ? d[savingsKey] : null,
       lastTransaction: lastTransKey ? d[lastTransKey] : null,
       riskFlag: riskKey ? d[riskKey] : null,

@@ -203,6 +203,9 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
       <!-- Loading / error -->
       <div id="loading"><div class="spin"></div><div id="loadingMsg">Fetching account data...</div></div>
       <div id="errBox"><div class="etitle">Brief generation failed</div><div id="errMsg" style="font-size:13px;color:#666;margin-top:2px"></div></div>
+      <div id="sf-banner" style="display:none;margin:0 2rem 1rem"></div>
+      <div id="ai-banner" style="display:none;margin:0 2rem 1rem"></div>
+      <div id="general-banner" style="display:none;margin:0 2rem 1rem"></div>
 
       <!-- 1. Account Snapshot -->
       <div class="section" id="sfSection" style="display:none">
@@ -275,6 +278,17 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
         <div class="ai-box" id="aiContent"></div>
       </div>
 
+      <!-- Post-Meeting Notes -->
+      <div class="section" id="postMeetingSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Post-Meeting Notes</div>
+        <p style="font-size:12px;color:#888;margin-bottom:12px">Add notes, transcription, next steps, or anything discussed. This will be summarised by AI and logged as an open task in Salesforce.</p>
+        <textarea id="postMeetingNotes" placeholder="e.g. Met with Dean, discussed upgrading to Pro plan. Merchant interested in Loyalty. Follow up on Capital eligibility. Next step: send proposal by Friday..." style="width:100%;min-height:140px;border:1px solid #E5E4E0;border-radius:10px;padding:12px 14px;font-size:13px;font-family:inherit;line-height:1.6;outline:none;resize:vertical;transition:border-color 0.15s" onfocus="this.style.borderColor='#0066FF'" onblur="this.style.borderColor='#E5E4E0'"></textarea>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <button onclick="createSFTask()" id="createTaskBtn" style="height:38px;padding:0 20px;background:#0066FF;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Log to Salesforce ↗</button>
+          <div id="taskStatus" style="font-size:12px;color:#888"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -305,6 +319,26 @@ const INDUSTRY_INSIGHTS = {
 
 const MSGS = ['Fetching account data from Salesforce...','Finding relevant product releases...','Generating AI synthesis...','Almost done...'];
 let _sf = null, _timer = null, _idx = 0;
+
+function showBanner(id, msg, type='warn') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const styles = {
+    warn: 'background:#FFF7ED;border:1px solid #FED7AA;color:#92400E',
+    alert: 'background:#FEF2F2;border:1px solid #FECACA;color:#DC2626',
+    info: 'background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8',
+    ok: 'background:#F0FDF4;border:1px solid #BBF7D0;color:#15803D'
+  };
+  el.innerHTML = `<div style="border-radius:10px;padding:12px 16px;font-size:13px;line-height:1.6;${styles[type]||styles.warn}">${msg}<button onclick="this.parentElement.parentElement.style.display='none'" style="float:right;background:none;border:none;cursor:pointer;font-size:16px;line-height:1;opacity:0.5;margin-left:8px">✕</button></div>`;
+  el.style.display = 'block';
+}
+
+function clearBanners() {
+  ['sf-banner','ai-banner','general-banner'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+  });
+}
 
 function dot(id, state) {
   const el = document.getElementById(id);
@@ -400,6 +434,7 @@ function renderSF(sf) {
       ${sf.openDeals ? `<div class="ir"><span class="il">Open deals</span><span class="iv">${sf.openDeals}</span></div>` : ''}
       ${sf.wonDeals ? `<div class="ir"><span class="il">Won deals</span><span class="iv">${sf.wonDeals}</span></div>` : ''}
       ${sf.buuid ? `<div class="ir"><span class="il">Admin</span><span class="iv"><a href="https://admin.yoco.co.za/businesses/${sf.buuid}/details/" target="_blank" style="display:inline-block;background:#1a1a1a;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;text-decoration:none">Open Admin ↗</a></span></div>` : ''}
+      ${sf.bank ? `<div class="ir"><span class="il">Bank</span><span class="iv">${sf.bank.name}${sf.bank.type ? ` · ${sf.bank.type}` : ''}</span></div>` : ''}
       ${sf.health ? `<div class="ir"><span class="il">Account Health</span><span class="iv">${sf.health}</span></div>` : ''}
     </div>`;
 
@@ -459,6 +494,8 @@ function renderProducts(sf) {
     { label:'Yoco Savings', value:savingsVal, bg:savingsVal==='Active'?'#DCFCE7':'#F3F4F6', color:savingsVal==='Active'?'#16A34A':'#6B7280' },
     { label:'Segment', value:sf.segment, bg:'#F5F3FF', color:'#7C3AED' },
     { label:'Transaction Rate', value:sf.transactionRate || null, bg:'#FEF3C7', color:'#D97706' },
+    { label:'Integrations', value:sf.integrations || null, bg:'#FEF3C7', color:'#D97706' },
+    { label:'Website Plugins', value:sf.websitePlugins || null, bg:'#FEF3C7', color:'#D97706' },
     { label:'Yoco Connect', value:sf.hasConnect ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
     { label:'Shopify', value:sf.hasShopify ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
     { label:'WooCommerce', value:sf.hasWoo ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
@@ -688,22 +725,23 @@ function renderContacts(contacts) {
   con.innerHTML = `
     <div class="section">
       <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Contacts (${top3.length}${contacts.length > top3.length ? ` of ${contacts.length}` : ''})</div>
-      <div class="contacts-grid">
+      <div style="display:flex;flex-direction:column;gap:8px;">
         ${top3.map(c => {
           const mobile = c.mobile || c.phone;
           const waNumber = formatWhatsApp(mobile);
+          const name = (c.name||'').split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
           return `
-          <div class="contact-card">
-            <div>
-              <p style="font-size:14px;font-weight:700;margin-bottom:2px">${c.name||'—'}</p>
-              ${c.title ? `<p style="font-size:12px;color:#888;margin-bottom:5px">${c.title}</p>` : '<div style="margin-bottom:5px"></div>'}
+          <div class="contact-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="flex:1;min-width:0">
+              <p style="font-size:14px;font-weight:700;margin-bottom:2px">${name||'—'}</p>
+              ${c.title ? `<p style="font-size:12px;color:#888;margin-bottom:4px">${c.title}</p>` : ''}
               ${mobile ? `<p style="font-size:13px;font-weight:500">${mobile}</p>` : ''}
-              ${c.email ? `<p style="font-size:12px;color:#888;margin-top:2px">${c.email}</p>` : ''}
+              ${c.email ? `<p style="font-size:12px;color:#888;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.email}</p>` : ''}
             </div>
             ${mobile && waNumber ? `
             <a href="https://web.whatsapp.com/send?phone=${waNumber}" target="_blank"
-              style="display:flex;align-items:center;gap:5px;background:#25D366;color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;text-decoration:none;flex-shrink:0;margin-top:2px;white-space:nowrap">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              style="flex-shrink:0;display:flex;align-items:center;gap:5px;background:#25D366;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;text-decoration:none;white-space:nowrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
               WhatsApp
             </a>` : ''}
           </div>`;
@@ -781,13 +819,14 @@ async function generate() {
   const am = '—'; // will be replaced by SF owner after load
 
   _sf = null;
+  clearBanners();
   document.getElementById('subAccountsSection').style.display = 'none';
   document.getElementById('accountPicker').style.display = 'none';
   document.getElementById('briefOutput').style.display = 'block';
   document.getElementById('loading').style.display = 'block';
   document.getElementById('errBox').style.display = 'none';
   document.getElementById('sfContacts').innerHTML = '';
-  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection','opportunitiesSection','tasksSection'].forEach(id => {
+  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection','opportunitiesSection','tasksSection','postMeetingSection'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -836,16 +875,19 @@ async function generate() {
         if (sfData.isGroupAccount) renderSubAccounts(sfData.childAccounts || []);
         renderIndustryInsights(sfData.industry);
         activateBtns();
-
-        // Slack notify the account owner
-        const amName = sfData.keyAccountManager || sfData.owner || '';
-        const briefUrl = `https://yoco-brief.vercel.app/?merchant=${encodeURIComponent(merchant)}&accountId=${encodeURIComponent(sfData.id || '')}`;
-        fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName, merchant, briefUrl}) }).catch(()=>{});
+        document.getElementById('postMeetingSection').style.display = 'block';
       } else {
         dot('dot-sf','error');
         document.getElementById('sf-status').textContent = sfData.found === false ? 'Not found' : 'Error';
+        showBanner('sf-banner', sfData.found === false
+          ? `⚠️ <strong>Merchant not found in Salesforce.</strong> Check the spelling or try a shorter search term. If the account exists, it may be named differently in SF.`
+          : `⚠️ <strong>Salesforce connection failed.</strong> This could be a temporary issue. Try generating the brief again. If it persists, contact your admin.`, 'warn');
       }
-    } catch(e) { dot('dot-sf','error'); document.getElementById('sf-status').textContent = 'Error'; }
+    } catch(e) {
+      dot('dot-sf','error');
+      document.getElementById('sf-status').textContent = 'Error';
+      showBanner('sf-banner', `🚨 <strong>Salesforce error:</strong> ${e.message}. Try refreshing the page and generating again.`, 'alert');
+    }
 
     // Releases
     const relevant = getRelevant(sfData?.industry || '');
@@ -867,7 +909,7 @@ ${sfData?.cases?.length ? `- Case topics: ${sfData.cases.slice(0,3).map(c=>c.sub
 ${sfData?.openTasks?.length ? `- Open tasks: ${sfData.openTasks.map(t=>`${t.subject} (due ${t.dueDate||'?'})`).join(', ')}` : ''}
 ${sfData?.opportunities?.length ? `- Open opportunities: ${sfData.opportunities.map(o=>`${o.name} — ${o.stage}${o.amount?' ('+fmt(o.amount)+')':''}`).join(' | ')}` : ''}
 
-PREVIOUS ACTIVITY (last 5 interactions):
+PREVIOUS ACTIVITY (last 3 interactions):
 ${sfData?.previousTasks?.length ? sfData.previousTasks.slice(0,3).map(t=>`- [${t.date}] ${t.subject}: ${(t.description||'').slice(0,120)}`).join('\n') : '- No recent activity recorded'}
 
 RELEVANT PRODUCT RELEASES:
@@ -900,9 +942,25 @@ RECOMMENDED APPROACH:
         document.getElementById('aiContent').textContent = ad.text;
         document.getElementById('aiSection').style.display = 'block';
         dot('dot-ai','live');
-        document.getElementById('ai-status').textContent = ad.model || 'Gemini';
+        document.getElementById('ai-status').textContent = ad.model || 'GPT-4o mini';
+
+        // Slack notify AFTER AI is done
+        if (_sf) {
+          const amName = _sf.keyAccountManager || _sf.owner || '';
+          const briefUrl = `https://yoco-brief.vercel.app/?merchant=${encodeURIComponent(merchant)}&accountId=${encodeURIComponent(_sf.id || '')}`;
+          fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName, merchant, briefUrl}) }).catch(()=>{});
+        }
+      } else {
+        dot('dot-ai','error');
+        document.getElementById('ai-status').textContent = 'Error';
+        showBanner('ai-banner', `⚠️ <strong>AI Synthesis returned an empty response.</strong> The brief data is still available above. Try clicking "Generate Brief" again to retry the AI summary.`, 'warn');
       }
-    } else { dot('dot-ai','error'); document.getElementById('ai-status').textContent = 'Error'; }
+    } else {
+      const errData = await ar.json().catch(()=>({}));
+      dot('dot-ai','error');
+      document.getElementById('ai-status').textContent = 'Error';
+      showBanner('ai-banner', `⚠️ <strong>AI Synthesis failed.</strong> ${errData.error || 'Unknown error'}. Your Salesforce data is still shown above. Try generating again — if this keeps happening, your OpenAI API key may need a top-up at platform.openai.com.`, 'warn');
+    }
 
     clearInterval(_timer);
     document.getElementById('loading').style.display = 'none';
@@ -914,6 +972,7 @@ RECOMMENDED APPROACH:
     document.getElementById('loading').style.display = 'none';
     document.getElementById('errBox').style.display = 'block';
     document.getElementById('errMsg').textContent = err.message;
+    showBanner('general-banner', `🚨 <strong>Something went wrong:</strong> ${err.message}. Please refresh the page and try again. If the issue persists, contact Vaughn.`, 'alert');
   }
 }
 
@@ -940,6 +999,60 @@ async function saveToNotion() {
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && ['merchant','am'].includes(e.target.id)) generate();
 });
+
+async function createSFTask() {
+  const notes = document.getElementById('postMeetingNotes').value.trim();
+  if (!notes) { alert('Add some notes first'); return; }
+  if (!_sf?.id) { alert('No account loaded'); return; }
+
+  const btn = document.getElementById('createTaskBtn');
+  const status = document.getElementById('taskStatus');
+  btn.textContent = 'Summarising...'; btn.disabled = true;
+  status.textContent = '';
+
+  try {
+    // AI summarise the notes first
+    const merchant = document.getElementById('merchant').value.trim();
+    const summaryRes = await fetch('/api/gemini', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        prompt: `Summarise these post-meeting notes for a Yoco Account Manager meeting with "${merchant}" into a concise Salesforce task description. Include: key discussion points, any commitments made, next steps, and follow-up actions. Keep it professional and structured.\n\nNOTES:\n${notes}`,
+        maxTokens: 500
+      })
+    });
+    const summaryData = await summaryRes.json();
+    const summary = summaryData.text || notes;
+
+    btn.textContent = 'Logging to SF...';
+
+    // Create the task
+    const taskRes = await fetch('/api/salesforce-task', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        accountId: _sf.id,
+        subject: `Post-Meeting Notes — ${merchant} — ${new Date().toLocaleDateString('en-ZA')}`,
+        description: summary
+      })
+    });
+    const taskData = await taskRes.json();
+
+    if (taskRes.ok) {
+      btn.textContent = '✓ Logged to Salesforce';
+      btn.style.background = '#16A34A';
+      const sfBase = _sf.sfInstance || 'https://yoco.lightning.force.com';
+      status.innerHTML = `Task created — <a href="${sfBase}/${taskData.taskId}" target="_blank" style="color:#0066FF;font-weight:600">View in Salesforce ↗</a>`;
+    } else {
+      btn.textContent = 'Error';
+      status.textContent = taskData.error || 'Failed to create task';
+      btn.style.background = '#DC2626';
+    }
+  } catch (err) {
+    btn.textContent = 'Error';
+    status.textContent = err.message;
+    btn.style.background = '#DC2626';
+  }
+  setTimeout(() => { btn.textContent = 'Log to Salesforce ↗'; btn.disabled = false; btn.style.background = '#0066FF'; }, 5000);
+}
 
 // Auto-generate if URL params present (from Slack notification link)
 window.addEventListener('load', () => {
