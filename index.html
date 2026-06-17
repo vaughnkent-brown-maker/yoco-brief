@@ -216,64 +216,64 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
         <div id="sfTasks"></div>
       </div>
 
-      <!-- 1b. Open & Overdue Tasks -->
-      <div class="section" id="tasksSection" style="display:none">
-        <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Tasks <span class="live-tag">Live · Salesforce</span></div>
-        <div id="tasksContent"></div>
-      </div>
-
-      <!-- 2. Contacts -->
-      <div id="sfContacts"></div>
-
-      <!-- 3. Product Usage -->
+      <!-- 2. Product Usage -->
       <div class="section" id="productsSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Product Usage <span class="live-tag">Live · Salesforce</span></div>
         <div id="productsContent"></div>
       </div>
 
-      <!-- 3. Open Opportunities -->
+      <!-- 3. Tasks -->
+      <div class="section" id="tasksSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Tasks <span class="live-tag">Live · Salesforce</span></div>
+        <div id="tasksContent"></div>
+      </div>
+
+      <!-- 4. Contacts -->
+      <div id="sfContacts"></div>
+
+      <!-- 5. Open Opportunities -->
       <div class="section" id="opportunitiesSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Open Opportunities <span class="live-tag">Live · Salesforce</span></div>
         <div id="opportunitiesContent"></div>
       </div>
 
-      <!-- 4. Capital -->
+      <!-- 6. Capital -->
       <div class="section" id="capitalSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Yoco Capital</div>
         <div id="capitalContent"></div>
       </div>
 
-      <!-- 4. Support & Cases -->
+      <!-- 7. Support & Cases -->
       <div class="section" id="intercomSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#EF4444"></span>Support & Cases <span class="live-tag">Live · Salesforce</span></div>
         <div id="intercomContent"></div>
       </div>
 
-      <!-- 5. Sub-accounts (group only) -->
+      <!-- 8. Sub-accounts (group only) -->
       <div class="section" id="subAccountsSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Group Account — Locations <span class="live-tag">Live · Salesforce</span></div>
         <div id="subAccountsContent"></div>
       </div>
 
-      <!-- 6. Previous Activity -->
+      <!-- 9. Previous Activity -->
       <div class="section" id="prevTasksSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Previous Activity</div>
         <div id="prevTasksContent"></div>
       </div>
 
-      <!-- 8. Industry Intelligence -->
+      <!-- 10. Industry Intelligence -->
       <div class="section" id="industrySection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#16A34A"></span>Industry Intelligence</div>
         <div id="industryContent"></div>
       </div>
 
-      <!-- 9. Product Releases -->
+      <!-- 11. Product Releases -->
       <div class="section" id="relSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Upcoming Releases <span class="notion-tag">Notion</span></div>
         <div id="relContent"></div>
       </div>
 
-      <!-- 10. AI Synthesis -->
+      <!-- 12. AI Synthesis -->
       <div class="section" id="aiSection" style="display:none">
         <div class="slabel"><span class="sdot" style="background:#1a1a1a"></span>AI Pre-meeting Brief</div>
         <div class="ai-box" id="aiContent"></div>
@@ -760,25 +760,55 @@ function renderContacts(contacts) {
     </div>`;
 }
 
-function renderIndustryInsights(industry) {
+function renderIndustryInsights(sf) {
   const sec = document.getElementById('industrySection');
   const con = document.getElementById('industryContent');
-  if (!industry) { sec.style.display = 'none'; return; }
+  if (!sf.industry) { sec.style.display = 'none'; return; }
   sec.style.display = 'block';
-  const ins = getIndustryInsight(industry);
-  con.innerHTML = `
-    <div class="industry-grid">
-      <div>
-        <div class="ind-box" style="background:#F0FDF4;margin-bottom:8px"><p style="font-size:10px;font-weight:700;color:#16A34A;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Peak Trading Times</p><p style="font-size:13px">${ins.peakTimes}</p></div>
-        <div class="ind-box" style="background:#EFF6FF;margin-bottom:8px"><p style="font-size:10px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Avg Basket Size</p><p style="font-size:13px">${ins.avgBasket}</p></div>
-        <div class="ind-box" style="background:#F5F3FF"><p style="font-size:10px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Best Yoco Fit</p><p style="font-size:13px">${ins.yocoFit}</p></div>
-      </div>
-      <div>
-        <div class="ind-box" style="background:#FEF2F2;margin-bottom:8px"><p style="font-size:10px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Industry Challenges</p><p style="font-size:13px">${ins.challenges}</p></div>
-        <div class="ind-box" style="background:#FFF7ED;margin-bottom:8px"><p style="font-size:10px;font-weight:700;color:#D97706;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Watch Outs</p><p style="font-size:13px">${ins.watchOuts}</p></div>
-        <div class="ind-box" style="background:#F7F6F3"><p style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Good to Know</p><p style="font-size:13px">${ins.goodToKnow}</p></div>
-      </div>
-    </div>`;
+
+  con.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:#888;font-size:12px"><div class="spin" style="width:16px;height:16px;border-width:2px"></div>Generating industry intelligence...</div>`;
+
+  fetch('/api/gemini', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      prompt: `You are a Yoco Account Manager in South Africa about to visit a ${sf.industry} merchant called "${sf.name}" in ${sf.city || 'South Africa'}, on the ${sf.billingPackage || 'Core'} plan with R${Math.round((sf.tpv30Day||0)/1000)}k monthly TPV.
+
+Give me 4 specific, practical industry intelligence bullets for this meeting. Focus on:
+1. What's happening RIGHT NOW in the ${sf.industry} industry in South Africa (seasonality, trends, challenges)
+2. What competitors or threats they face
+3. What Yoco products/features are most relevant given their industry and current plan
+4. One specific thing to watch out for in this meeting
+
+Respond in exactly this format (4 lines, each starting with an emoji):
+📈 [current industry trend or opportunity]
+⚔️ [competitive landscape or threat]
+🎯 [most relevant Yoco product/feature for them right now]
+⚠️ [specific watch out for this meeting]
+
+Be specific to ${sf.industry} in South Africa. Max 2 sentences per bullet.`,
+      maxTokens: 400
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.text) {
+      const lines = d.text.split('\n').filter(l => l.trim());
+      con.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">
+        ${lines.map(line => {
+          const isWarn = line.startsWith('⚠️');
+          const isTarget = line.startsWith('🎯');
+          const isTrend = line.startsWith('📈');
+          const bg = isWarn ? '#FFF7ED' : isTarget ? '#F0FDF4' : isTrend ? '#EFF6FF' : '#F5F3FF';
+          const border = isWarn ? '#FED7AA' : isTarget ? '#BBF7D0' : isTrend ? '#BFDBFE' : '#DDD6FE';
+          return `<div style="background:${bg};border:1px solid ${border};border-radius:9px;padding:10px 14px;font-size:13px;line-height:1.6">${line}</div>`;
+        }).join('')}
+      </div>`;
+    } else {
+      sec.style.display = 'none';
+    }
+  })
+  .catch(() => { sec.style.display = 'none'; });
+}
 }
 
 function renderReleases(relevant) {
@@ -883,7 +913,7 @@ async function generate() {
         renderPreviousTasks(sfData.previousTasks);
         renderContacts(sfData.contacts);
         if (sfData.isGroupAccount) renderSubAccounts(sfData.childAccounts || []);
-        renderIndustryInsights(sfData.industry);
+        renderIndustryInsights(sfData);
         activateBtns();
         document.getElementById('postMeetingSection').style.display = 'block';
       } else {
