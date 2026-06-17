@@ -337,19 +337,30 @@ function fmt(n) { return n ? 'R' + Number(n).toLocaleString('en-ZA') : '—'; }
 function renderSF(sf) {
   document.getElementById('sfSection').style.display = 'block';
 
-  // Try extract rate from previous activity notes
-  let inferredRate = null;
+  // Try extract debit/credit rates from previous activity notes
+  let inferredDebit = null;
+  let inferredCredit = null;
   if (!sf.transactionRate && sf.previousTasks?.length) {
     for (const t of sf.previousTasks) {
-      const text = ((t.description || '') + ' ' + (t.subject || '')).toLowerCase();
-      const match = text.match(/(\d+[\.,]?\d*)\s*%/) || text.match(/rate[^\d]*(\d+[\.,]?\d*)/i);
-      if (match) { inferredRate = match[1].replace(',','.') + '%'; break; }
+      const text = (t.description || '') + ' ' + (t.subject || '');
+      if (!inferredDebit) {
+        const dm = text.match(/debit[^\d]*(\d+[\.,]\d+)\s*%/i) || text.match(/(\d+[\.,]\d+)\s*%[^\d]*debit/i);
+        if (dm) inferredDebit = dm[1].replace(',','.') + '%';
+      }
+      if (!inferredCredit) {
+        const cm = text.match(/credit[^\d]*(\d+[\.,]\d+)\s*%/i) || text.match(/(\d+[\.,]\d+)\s*%[^\d]*credit/i);
+        if (cm) inferredCredit = cm[1].replace(',','.') + '%';
+      }
+      if (inferredDebit && inferredCredit) break;
     }
   }
   const rateDisplay = sf.transactionRate
     ? `<div class="msub" style="color:#D97706;font-weight:600">Rate: ${sf.transactionRate}</div>`
-    : inferredRate
-      ? `<div class="msub" style="color:#D97706;font-weight:600">~${inferredRate} <span style="font-weight:400;color:#aaa;font-size:9px">from notes — confirm</span></div>`
+    : (inferredDebit || inferredCredit)
+      ? `<div class="msub" style="color:#D97706;font-weight:600">
+          ${inferredDebit ? `Debit: ~${inferredDebit}` : ''}${inferredDebit && inferredCredit ? ' · ' : ''}${inferredCredit ? `Credit: ~${inferredCredit}` : ''}
+          <span style="font-weight:400;color:#aaa;font-size:9px;display:block;margin-top:1px">from notes — confirm first</span>
+         </div>`
       : '<div class="msub" style="color:#bbb">Rate: not on SF</div>';
 
   // Top metrics — TPV big, key account, billing, location
@@ -857,7 +868,7 @@ ${sfData?.openTasks?.length ? `- Open tasks: ${sfData.openTasks.map(t=>`${t.subj
 ${sfData?.opportunities?.length ? `- Open opportunities: ${sfData.opportunities.map(o=>`${o.name} — ${o.stage}${o.amount?' ('+fmt(o.amount)+')':''}`).join(' | ')}` : ''}
 
 PREVIOUS ACTIVITY (last 5 interactions):
-${sfData?.previousTasks?.length ? sfData.previousTasks.map(t=>`- [${t.date}] ${t.subject}: ${(t.description||'').slice(0,200)}`).join('\n') : '- No recent activity recorded'}
+${sfData?.previousTasks?.length ? sfData.previousTasks.slice(0,3).map(t=>`- [${t.date}] ${t.subject}: ${(t.description||'').slice(0,120)}`).join('\n') : '- No recent activity recorded'}
 
 RELEVANT PRODUCT RELEASES:
 ${relevant.slice(0,3).map(r=>`- ${r.name}: ${r.talking_point}`).join('\n')}
