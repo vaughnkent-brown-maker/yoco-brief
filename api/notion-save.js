@@ -11,7 +11,23 @@ export default async function handler(req, res) {
   const today = new Date().toISOString().split('T')[0];
   const fmt = (n) => n ? 'R' + Number(n).toLocaleString('en-ZA') : '—';
 
-  const briefUrl = sfData?.id
+  // Map AM names to Notion user IDs
+  const NOTION_USERS = {
+    'vaughn kent-brown': '10dd872b-594c-816d-a241-0002c96d406b',
+    'bianca muratu': '1d63c5ce-cb6e-4e0c-9a32-acf3867908bd',
+    'mel barnes': '11bd872b-594c-810b-b2c6-000218adb87c',
+    'melissa barnes': '11bd872b-594c-810b-b2c6-000218adb87c',
+    'lebohang mdakane': '1e5d872b-594c-8114-ae4a-0002090952b3',
+    'kelebogile ramasodi': '176d872b-594c-81e7-9a8a-00024c85c765',
+    'kylé steyn': '202d872b-594c-8129-9d29-0002e112dae2',
+    'kyle steyn': '202d872b-594c-8129-9d29-0002e112dae2',
+    'benita nelson': '208d872b-594c-8126-a79e-0002476fd050',
+    'nomahlubi madikgetla': '2d8d872b-594c-8127-a5ca-000278a7979d',
+    'sesethu time': '2d19078f-7dfa-41ba-b9c2-da676f64d8a3',
+  };
+
+  const amLower = (am || '').toLowerCase();
+  const notionUserId = NOTION_USERS[amLower];
     ? `https://yoco-brief.vercel.app/?merchant=${encodeURIComponent(merchant)}&accountId=${encodeURIComponent(sfData.id)}`
     : `https://yoco-brief.vercel.app/?merchant=${encodeURIComponent(merchant)}`;
 
@@ -138,7 +154,8 @@ export default async function handler(req, res) {
           Engagement: { title: [{ text: { content: `Briefing — ${merchant} — ${today}` } }] },
           'Merchant name': { rich_text: [{ text: { content: merchant } }] },
           'Briefing status': { status: { name: 'Ready' } },
-          'Meeting start': { date: { start: today } }
+          'Meeting start': { date: { start: today } },
+          ...(notionUserId ? { 'Account manager': { people: [{ id: notionUserId }] } } : {})
         },
         children: blocks.slice(0, 100) // Notion API limit is 100 blocks per request
       })
@@ -152,3 +169,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
+// Note: to debug users, hit GET https://api.notion.com/v1/users with the token
