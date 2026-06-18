@@ -864,6 +864,11 @@ async function generate() {
   document.getElementById('briefOutput').style.display = 'block';
   document.getElementById('loading').style.display = 'block';
   document.getElementById('errBox').style.display = 'none';
+  // Disable Save to Notion until AI brief is ready
+  const saveBtnEl = document.getElementById('saveBtn');
+  saveBtnEl.disabled = true;
+  saveBtnEl.style.opacity = '0.4';
+  saveBtnEl.style.cursor = 'not-allowed';
   document.getElementById('sfContacts').innerHTML = '';
   ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection','opportunitiesSection','tasksSection','postMeetingSection'].forEach(id => {
     const el = document.getElementById(id);
@@ -995,6 +1000,11 @@ RECOMMENDED APPROACH:
         document.getElementById('aiSection').style.display = 'block';
         dot('dot-ai','live');
         document.getElementById('ai-status').textContent = ad.model || 'GPT-4o mini';
+        // Enable Save to Notion now that AI is done
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'pointer';
 
         // Slack notify AFTER AI is done
         if (_sf) {
@@ -1036,20 +1046,51 @@ async function saveToNotion() {
   if (!merchant) { alert('No merchant loaded'); return; }
   const btn = document.getElementById('saveBtn');
   btn.textContent = 'Saving...'; btn.disabled = true;
+
+  // Scrape previous activity
+  const prevTasks = (_sf?.previousTasks || []).map(t =>
+    `[${t.date}] ${t.subject}${t.description ? ': ' + t.description.slice(0, 200) : ''}`
+  );
+
+  // Scrape contacts
+  const contacts = (_sf?.contacts || []).slice(0, 3).map(c =>
+    `${c.name}${c.title ? ' (' + c.title + ')' : ''} — ${c.mobile || c.phone || ''} ${c.email ? '| ' + c.email : ''}`
+  );
+
+  // Scrape open tasks
+  const openTasks = (_sf?.openTasks || []).map(t =>
+    `${t.subject} — Due: ${t.dueDate || '?'} (${t.priority || 'Normal'})`
+  );
+
+  // Scrape opportunities
+  const opps = (_sf?.opportunities || []).map(o =>
+    `${o.name} — ${o.stage}${o.amount ? ' | R' + Number(o.amount).toLocaleString('en-ZA') : ''}${o.closeDate ? ' | Close: ' + o.closeDate : ''}`
+  );
+
+  // Scrape cases
+  const cases = (_sf?.cases || []).slice(0, 5).map(c =>
+    `#${c.caseNumber || '?'} ${c.subject} — ${c.status} (${c.created || ''})`
+  );
+
+  // Scrape releases
+  const releases = document.getElementById('relContent')?.innerText || '';
+
+  // Industry intelligence
+  const industry = document.getElementById('industryContent')?.innerText || '';
+
   try {
     const r = await fetch('/api/notion-save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        merchant,
-        am,
-        content,
+        merchant, am, content,
         sfData: {
           id: _sf?.id,
           tpv30Day: _sf?.tpv30Day,
           billingPackage: _sf?.billingPackage,
           industry: _sf?.industry,
           city: _sf?.city,
+          fullAddress: _sf?.fullAddress,
           isKeyAccount: _sf?.isKeyAccount,
           fullyOnboarded: _sf?.fullyOnboarded,
           phone: _sf?.phone,
@@ -1057,13 +1098,23 @@ async function saveToNotion() {
           wonDeals: _sf?.wonDeals,
           capitalLimit: _sf?.capitalLimit,
           capitalStatus: _sf?.capitalStatus,
+          capitalLastDate: _sf?.capitalLastDate,
+          capitalProvider: _sf?.capitalProvider,
           segment: _sf?.segment,
           integrations: _sf?.integrations,
+          websitePlugins: _sf?.websitePlugins,
+          bank: _sf?.bank,
           cases: _sf?.cases?.length,
           openCases: _sf?.cases?.filter(c=>!['Closed','Resolved'].includes(c.status)).length,
-          opportunities: _sf?.opportunities?.map(o=>`${o.name} — ${o.stage}`).join(', '),
           sfUrl: _sf?.sfUrl
-        }
+        },
+        openTasks,
+        contacts,
+        opportunities: opps,
+        cases,
+        previousActivity: prevTasks,
+        releases,
+        industryIntelligence: industry
       })
     });
     const data = await r.json();
@@ -1074,7 +1125,7 @@ async function saveToNotion() {
       btn.textContent = 'Error: ' + (data.error || 'Failed');
     }
   } catch(e) { btn.textContent = 'Error'; }
-  setTimeout(() => { btn.textContent = 'Save to Notion'; btn.disabled = false; }, 3000);
+  setTimeout(() => { btn.textContent = 'Save to Notion'; btn.disabled = false; btn.style.opacity='1'; btn.style.cursor='pointer'; }, 3000);
 }
 
 document.addEventListener('keydown', e => {
