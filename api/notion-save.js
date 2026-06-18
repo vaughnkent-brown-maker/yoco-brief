@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { merchant, am, content, sfData, openTasks, contacts, opportunities, cases, previousActivity, releases, industryIntelligence } = req.body;
@@ -158,7 +158,7 @@ export default async function handler(req, res) {
           'Merchant name': { rich_text: [{ text: { content: merchant } }] },
           'Briefing status': { status: { name: 'Ready' } },
           'Meeting start': { date: { start: today } },
-          ...(notionUserId ? { 'Account manager': { people: [{ id: notionUserId }] } } : {})
+          ...(notionUserId ? { 'Account manager': { people: [{ object: 'user', id: notionUserId }] } } : {})
         },
         children: blocks.slice(0, 100) // Notion API limit is 100 blocks per request
       })

@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const notionToken = process.env.NOTION_TOKEN;
   if (!notionToken) return res.status(500).json({ error: 'No token' });
 
