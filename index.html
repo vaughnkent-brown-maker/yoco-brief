@@ -1238,14 +1238,13 @@ window.addEventListener('load', () => {
 </script>
 </div><!-- end app-content -->
 
-<!-- Clerk: official script-tag method. Gate is shown by default via CSS. -->
+<!-- Clerk JS: loaded from your app's Frontend API domain. window.Clerk is a pre-instantiated singleton — do NOT use new Clerk() -->
 <script
   async
   crossorigin="anonymous"
   data-clerk-publishable-key="pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ"
-  onload="initClerk()"
-  onerror="document.getElementById('auth-gate').innerHTML='<div style=text-align:center;padding:40px;font-family:Inter,sans-serif><p style=font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px>Authentication Error</p><p style=font-size:13px;color:#666;margin-bottom:16px>Could not load sign-in. Please refresh.</p><button onclick=location.reload() style=padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px>Retry</button></div>'"
-  src="https://exotic-stork-68.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js">
+  src="https://exotic-stork-68.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+  type="text/javascript">
 </script>
 <script>
 async function initClerk() {
@@ -1255,12 +1254,11 @@ async function initClerk() {
   app.style.display  = 'none';
 
   try {
-    const clerk = new window.Clerk('pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ');
-    await clerk.load();
-    window._clerkInstance = clerk;
+    await window.Clerk.load();
+    window._clerkInstance = window.Clerk;
 
-    if (clerk.user) {
-      const email = clerk.user.primaryEmailAddress?.emailAddress || '';
+    if (window.Clerk.user) {
+      const email = window.Clerk.user.primaryEmailAddress?.emailAddress || '';
       if (email.endsWith('@yoco.com')) {
         gate.style.display = 'none';
         app.style.display  = 'block';
@@ -1268,21 +1266,45 @@ async function initClerk() {
         gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
           <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Access Denied</p>
           <p style="font-size:13px;color:#666;margin-bottom:20px">Only @yoco.com accounts are allowed.<br>Signed in as <strong>${email}</strong></p>
-          <button onclick="window._clerkInstance.signOut().then(()=>location.reload())" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Sign out</button>
+          <button onclick="window.Clerk.signOut().then(()=>location.reload())" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Sign out</button>
         </div>`;
       }
     } else {
-      clerk.mountSignIn(document.getElementById('clerk-sign-in'));
+      window.Clerk.mountSignIn(document.getElementById('clerk-sign-in'));
     }
   } catch(e) {
     console.error('Clerk init error:', e);
     gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
       <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Authentication Error</p>
-      <p style="font-size:13px;color:#666;margin-bottom:16px">Could not initialise sign-in. Please refresh.</p>
+      <p style="font-size:13px;color:#666;margin-bottom:16px">Could not initialise sign-in (${e.message}). Please refresh.</p>
       <button onclick="location.reload()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Retry</button>
     </div>`;
   }
 }
+
+// Clerk sets window.Clerk before firing DOMContentLoaded when loaded async with data-clerk-publishable-key
+// We wait for it to be available then call load()
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.Clerk) {
+    initClerk();
+  } else {
+    // Poll briefly in case script hasn't executed yet
+    const t = setInterval(() => {
+      if (window.Clerk) { clearInterval(t); initClerk(); }
+    }, 50);
+    setTimeout(() => {
+      clearInterval(t);
+      if (!window.Clerk) {
+        document.getElementById('auth-gate').style.display = 'flex';
+        document.getElementById('auth-gate').innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
+          <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Authentication Error</p>
+          <p style="font-size:13px;color:#666;margin-bottom:16px">Clerk script failed to load. Please refresh.</p>
+          <button onclick="location.reload()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Retry</button>
+        </div>`;
+      }
+    }, 5000);
+  }
+});
 </script>
 
 </body>
