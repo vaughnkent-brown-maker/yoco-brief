@@ -1,10 +1,12 @@
 {
   "functions": {
-    "api/gemini.js": { "maxDuration": 60 },
+    "api/ai.js": { "maxDuration": 60 },
     "api/salesforce.js": { "maxDuration": 30 },
     "api/salesforce-task.js": { "maxDuration": 30 },
     "api/notion-save.js": { "maxDuration": 30 },
+    "api/notion-update.js": { "maxDuration": 30 },
     "api/notion-search.js": { "maxDuration": 30 },
+    "api/notion-users.js": { "maxDuration": 30 },
     "api/slack-notify.js": { "maxDuration": 30 },
     "api/slack-search.js": { "maxDuration": 30 }
   }

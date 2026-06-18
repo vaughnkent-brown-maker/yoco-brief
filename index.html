@@ -768,7 +768,7 @@ function renderIndustryInsights(sf) {
 
   con.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:#888;font-size:12px"><div class="spin" style="width:16px;height:16px;border-width:2px"></div>Generating industry intelligence...</div>`;
 
-  fetch('/api/gemini', {
+  fetch('/api/ai', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
       prompt: `You are a Yoco Account Manager in South Africa about to visit a ${sf.industry} merchant called "${sf.name}" in ${sf.city || 'South Africa'}, on the ${sf.billingPackage || 'Core'} plan with R${Math.round((sf.tpv30Day||0)/1000)}k monthly TPV.
@@ -992,7 +992,7 @@ RISKS & WATCH OUTS:
 RECOMMENDED APPROACH:
 [2 sentences — how to frame this specific meeting]`;
 
-    const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:1200}) });
+    const ar = await fetch('/api/ai', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:1200}) });
     if (ar.ok) {
       const ad = await ar.json();
       if (ad.text) {
@@ -1146,7 +1146,7 @@ async function createSFTask() {
   try {
     // AI summarise the notes first
     const merchant = document.getElementById('merchant').value.trim();
-    const summaryRes = await fetch('/api/gemini', {
+    const summaryRes = await fetch('/api/ai', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         prompt: `Summarise these post-meeting notes for a Yoco Account Manager meeting with "${merchant}" into a concise Salesforce task description. Include: key discussion points, any commitments made, next steps, and follow-up actions. Keep it professional and structured.\n\nNOTES:\n${notes}`,
