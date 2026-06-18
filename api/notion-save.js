@@ -24,6 +24,9 @@ export default async function handler(req, res) {
     'benita nelson': '208d872b-594c-8126-a79e-0002476fd050',
     'nomahlubi madikgetla': '2d8d872b-594c-8127-a5ca-000278a7979d',
     'sesethu time': '2d19078f-7dfa-41ba-b9c2-da676f64d8a3',
+    'diaan wiese': '43e93bd3-ad5c-4c9b-8f9e-3a3ebbe0e774',
+    'leeroy february': '75d3b10d-e80b-413e-9af4-8e535013370a',
+    'danica davids': '95654326-6d06-4ba7-aeb3-16e47051b1e2',
   };
 
   const amLower = (am || '').toLowerCase();
