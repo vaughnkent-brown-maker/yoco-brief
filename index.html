@@ -143,7 +143,6 @@ body { font-family: 'Inter', sans-serif; background: #F5F4F0; color: #1a1a1a; fo
 
 details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0; }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
 </head>
 <body>
 
@@ -1240,32 +1239,62 @@ window.addEventListener('load', () => {
 </div><!-- end app-content -->
 
 <script>
-window.addEventListener('load', async () => {
-  const clerk = new window.Clerk('pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ');
-  await clerk.load();
-
-  const gate = document.getElementById('auth-gate');
-  const app = document.getElementById('app-content');
-
-  if (clerk.user) {
-    const email = clerk.user.primaryEmailAddress?.emailAddress || '';
-    if (email.endsWith('@yoco.com')) {
-      gate.style.display = 'none';
-      app.style.display = 'block';
-    } else {
-      gate.style.display = 'flex';
-      gate.innerHTML = `<div style="text-align:center;padding:40px">
-        <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Access Denied</p>
-        <p style="font-size:13px;color:#666;margin-bottom:20px">This tool is only available to @yoco.com accounts.</p>
-        <button onclick="clerk.signOut()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Sign out</button>
-      </div>`;
-    }
-  } else {
-    gate.style.display = 'flex';
-    app.style.display = 'none';
-    clerk.mountSignIn(document.getElementById('clerk-sign-in'));
+  function loadClerk() {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://exotic-stork-68.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
+      script.crossOrigin = 'anonymous';
+      script.onload = resolve;
+      script.onerror = () => {
+        // fallback to unpkg
+        const s2 = document.createElement('script');
+        s2.src = 'https://unpkg.com/@clerk/clerk-js@5/dist/clerk.browser.js';
+        s2.onload = resolve;
+        s2.onerror = reject;
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(script);
+    });
   }
-});
+
+  window.addEventListener('load', async () => {
+    try {
+      await loadClerk();
+
+      const Clerk = window.Clerk;
+      const clerk = new Clerk('pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ');
+      await clerk.load();
+
+      const gate = document.getElementById('auth-gate');
+      const app = document.getElementById('app-content');
+
+      if (clerk.user) {
+        const email = clerk.user.primaryEmailAddress?.emailAddress || '';
+        if (email.endsWith('@yoco.com')) {
+          gate.style.display = 'none';
+          app.style.display = 'block';
+        } else {
+          gate.style.display = 'flex';
+          gate.innerHTML = `<div style="text-align:center;padding:40px">
+            <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Access Denied</p>
+            <p style="font-size:13px;color:#666;margin-bottom:20px">This tool is only available to @yoco.com accounts.</p>
+            <button onclick="window._clerkInstance.signOut()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Sign out</button>
+          </div>`;
+        }
+      } else {
+        gate.style.display = 'flex';
+        app.style.display = 'none';
+        clerk.mountSignIn(document.getElementById('clerk-sign-in'));
+      }
+
+      window._clerkInstance = clerk;
+    } catch(e) {
+      console.error('Clerk failed to load:', e);
+      // If Clerk fails, show the app anyway so it's not broken
+      document.getElementById('auth-gate').style.display = 'none';
+      document.getElementById('app-content').style.display = 'block';
+    }
+  });
 </script>
 
 </body>
