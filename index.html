@@ -152,7 +152,19 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
     <svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M8 16C8 11.582 11.582 8 16 8s8 3.582 8 8-3.582 8-8 8-8-3.582-8-8z" fill="#fff"/><path d="M16 12a4 4 0 100 8 4 4 0 000-8z" fill="#1a1a1a"/></svg>
     <span style="font-size:18px;font-weight:700;color:#1a1a1a">Yoco AM Brief</span>
   </div>
-  <div id="clerk-sign-in"></div>
+  <div id="g_id_onload"
+    data-client_id="94406597210-hrdojoq30fodf4hsrb8en1u6pflddo82.apps.googleusercontent.com"
+    data-callback="handleGoogleSignIn"
+    data-auto_prompt="false">
+  </div>
+  <div class="g_id_signin"
+    data-type="standard"
+    data-size="large"
+    data-theme="outline"
+    data-text="sign_in_with"
+    data-shape="rectangular"
+    data-logo_alignment="left">
+  </div>
   <p style="font-size:12px;color:#888">Sign in with your @yoco.com Google account</p>
 </div>
 
@@ -1238,72 +1250,52 @@ window.addEventListener('load', () => {
 </script>
 </div><!-- end app-content -->
 
-<!-- Clerk JS: loaded from your app's Frontend API domain. window.Clerk is a pre-instantiated singleton — do NOT use new Clerk() -->
-<script
-  async
-  crossorigin="anonymous"
-  data-clerk-publishable-key="pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ"
-  src="https://exotic-stork-68.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
-  type="text/javascript">
-</script>
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-async function initClerk() {
+function handleGoogleSignIn(response) {
   const gate = document.getElementById('auth-gate');
   const app  = document.getElementById('app-content');
-  gate.style.display = 'flex';
-  app.style.display  = 'none';
 
   try {
-    await window.Clerk.load();
-    window._clerkInstance = window.Clerk;
+    // Decode the JWT credential to get email (no library needed)
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email = payload.email || '';
 
-    if (window.Clerk.user) {
-      const email = window.Clerk.user.primaryEmailAddress?.emailAddress || '';
-      if (email.endsWith('@yoco.com')) {
-        gate.style.display = 'none';
-        app.style.display  = 'block';
-      } else {
-        gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
-          <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Access Denied</p>
-          <p style="font-size:13px;color:#666;margin-bottom:20px">Only @yoco.com accounts are allowed.<br>Signed in as <strong>${email}</strong></p>
-          <button onclick="window.Clerk.signOut().then(()=>location.reload())" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Sign out</button>
-        </div>`;
-      }
+    if (email.endsWith('@yoco.com')) {
+      // Store session in sessionStorage so refresh keeps them logged in
+      sessionStorage.setItem('yoco_auth', JSON.stringify({ email, name: payload.name, picture: payload.picture }));
+      gate.style.display = 'none';
+      app.style.display  = 'block';
     } else {
-      window.Clerk.mountSignIn(document.getElementById('clerk-sign-in'));
+      gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
+        <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Access Denied</p>
+        <p style="font-size:13px;color:#666;margin-bottom:20px">Only @yoco.com accounts are allowed.<br>You signed in as <strong>${email}</strong></p>
+        <button onclick="location.reload()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Try another account</button>
+      </div>`;
     }
   } catch(e) {
-    console.error('Clerk init error:', e);
-    gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
-      <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Authentication Error</p>
-      <p style="font-size:13px;color:#666;margin-bottom:16px">Could not initialise sign-in (${e.message}). Please refresh.</p>
-      <button onclick="location.reload()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Retry</button>
-    </div>`;
+    console.error('Auth error:', e);
   }
 }
 
-// Clerk sets window.Clerk before firing DOMContentLoaded when loaded async with data-clerk-publishable-key
-// We wait for it to be available then call load()
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.Clerk) {
-    initClerk();
-  } else {
-    // Poll briefly in case script hasn't executed yet
-    const t = setInterval(() => {
-      if (window.Clerk) { clearInterval(t); initClerk(); }
-    }, 50);
-    setTimeout(() => {
-      clearInterval(t);
-      if (!window.Clerk) {
-        document.getElementById('auth-gate').style.display = 'flex';
-        document.getElementById('auth-gate').innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
-          <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Authentication Error</p>
-          <p style="font-size:13px;color:#666;margin-bottom:16px">Clerk script failed to load. Please refresh.</p>
-          <button onclick="location.reload()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Retry</button>
-        </div>`;
+// Check for existing session on load
+window.addEventListener('load', () => {
+  const gate = document.getElementById('auth-gate');
+  const app  = document.getElementById('app-content');
+  const stored = sessionStorage.getItem('yoco_auth');
+  if (stored) {
+    try {
+      const { email } = JSON.parse(stored);
+      if (email.endsWith('@yoco.com')) {
+        gate.style.display = 'none';
+        app.style.display  = 'block';
+        return;
       }
-    }, 5000);
+    } catch(e) {}
   }
+  gate.style.display = 'flex';
+  app.style.display  = 'none';
 });
 </script>
 
