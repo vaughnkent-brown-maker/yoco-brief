@@ -143,8 +143,22 @@ body { font-family: 'Inter', sans-serif; background: #F5F4F0; color: #1a1a1a; fo
 
 details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
 </head>
 <body>
+
+<!-- Auth Gate -->
+<div id="auth-gate" style="display:none;position:fixed;inset:0;background:#F5F4F0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M8 16C8 11.582 11.582 8 16 8s8 3.582 8 8-3.582 8-8 8-8-3.582-8-8z" fill="#fff"/><path d="M16 12a4 4 0 100 8 4 4 0 000-8z" fill="#1a1a1a"/></svg>
+    <span style="font-size:18px;font-weight:700;color:#1a1a1a">Yoco AM Brief</span>
+  </div>
+  <div id="clerk-sign-in"></div>
+  <p style="font-size:12px;color:#888">Sign in with your @yoco.com Google account</p>
+</div>
+
+<!-- Main app (hidden until auth) -->
+<div id="app-content" style="display:none">
 
 <!-- Header — clean, no buttons -->
 <div class="header">
@@ -1223,5 +1237,40 @@ window.addEventListener('load', () => {
   }
 });
 </script>
+</div><!-- end app-content -->
+
+<script>
+(async () => {
+  const clerk = new Clerk('pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ');
+  await clerk.load();
+
+  const gate = document.getElementById('auth-gate');
+  const app = document.getElementById('app-content');
+
+  if (clerk.user) {
+    // Signed in — check yoco.com email
+    const email = clerk.user.primaryEmailAddress?.emailAddress || '';
+    if (email.endsWith('@yoco.com')) {
+      gate.style.display = 'none';
+      app.style.display = 'block';
+    } else {
+      gate.style.display = 'flex';
+      gate.innerHTML = `<div style="text-align:center;padding:40px">
+        <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Access Denied</p>
+        <p style="font-size:13px;color:#666;margin-bottom:20px">This tool is only available to @yoco.com accounts.</p>
+        <button onclick="clerk.signOut()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Sign out</button>
+      </div>`;
+    }
+  } else {
+    // Not signed in — show login
+    gate.style.display = 'flex';
+    app.style.display = 'none';
+    clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
+      appearance: { elements: { card: 'shadow-none' } }
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
