@@ -147,7 +147,7 @@ details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0;
 <body>
 
 <!-- Auth Gate -->
-<div id="auth-gate" style="display:none;position:fixed;inset:0;background:#F5F4F0;z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:24px">
+<div id="auth-gate" style="display:flex;position:fixed;inset:0;background:#F5F4F0;z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:24px">
   <div style="display:flex;align-items:center;gap:10px">
     <svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M8 16C8 11.582 11.582 8 16 8s8 3.582 8 8-3.582 8-8 8-8-3.582-8-8z" fill="#fff"/><path d="M16 12a4 4 0 100 8 4 4 0 000-8z" fill="#1a1a1a"/></svg>
     <span style="font-size:18px;font-weight:700;color:#1a1a1a">Yoco AM Brief</span>
@@ -1238,52 +1238,51 @@ window.addEventListener('load', () => {
 </script>
 </div><!-- end app-content -->
 
+<!-- Clerk: official script-tag method. Gate is shown by default via CSS. -->
+<script
+  async
+  crossorigin="anonymous"
+  data-clerk-publishable-key="pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ"
+  onload="initClerk()"
+  onerror="document.getElementById('auth-gate').innerHTML='<div style=text-align:center;padding:40px;font-family:Inter,sans-serif><p style=font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px>Authentication Error</p><p style=font-size:13px;color:#666;margin-bottom:16px>Could not load sign-in. Please refresh.</p><button onclick=location.reload() style=padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px>Retry</button></div>'"
+  src="https://exotic-stork-68.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js">
+</script>
 <script>
-  window.addEventListener('load', async () => {
-    const gate = document.getElementById('auth-gate');
-    const app = document.getElementById('app-content');
+async function initClerk() {
+  const gate = document.getElementById('auth-gate');
+  const app  = document.getElementById('app-content');
+  gate.style.display = 'flex';
+  app.style.display  = 'none';
 
-    // Show gate immediately while Clerk loads
-    gate.style.display = 'flex';
-    app.style.display = 'none';
+  try {
+    const clerk = new window.Clerk('pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ');
+    await clerk.load();
+    window._clerkInstance = clerk;
 
-    try {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@clerk/clerk-js@5/dist/clerk.browser.js';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-
-      const clerk = new window.Clerk('pk_test_ZXhvdGljLXN0b3JrLTY4LmNsZXJrLmFjY291bnRzLmRldiQ');
-      await clerk.load();
-      window._clerkInstance = clerk;
-
-      if (clerk.user) {
-        const email = clerk.user.primaryEmailAddress?.emailAddress || '';
-        if (email.endsWith('@yoco.com')) {
-          gate.style.display = 'none';
-          app.style.display = 'block';
-        } else {
-          gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
-            <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Access Denied</p>
-            <p style="font-size:13px;color:#666;margin-bottom:20px">This tool is only available to @yoco.com accounts.<br>You're signed in as <strong>${email}</strong></p>
-            <button onclick="window._clerkInstance.signOut().then(()=>location.reload())" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Sign out</button>
-          </div>`;
-        }
+    if (clerk.user) {
+      const email = clerk.user.primaryEmailAddress?.emailAddress || '';
+      if (email.endsWith('@yoco.com')) {
+        gate.style.display = 'none';
+        app.style.display  = 'block';
       } else {
-        clerk.mountSignIn(document.getElementById('clerk-sign-in'));
+        gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
+          <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Access Denied</p>
+          <p style="font-size:13px;color:#666;margin-bottom:20px">Only @yoco.com accounts are allowed.<br>Signed in as <strong>${email}</strong></p>
+          <button onclick="window._clerkInstance.signOut().then(()=>location.reload())" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Sign out</button>
+        </div>`;
       }
-
-    } catch(e) {
-      console.error('Clerk failed to load:', e);
-      gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
-        <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Authentication Error</p>
-        <p style="font-size:13px;color:#666">Could not load sign-in. Please refresh the page.</p>
-      </div>`;
+    } else {
+      clerk.mountSignIn(document.getElementById('clerk-sign-in'));
     }
-  });
+  } catch(e) {
+    console.error('Clerk init error:', e);
+    gate.innerHTML = `<div style="text-align:center;padding:40px;font-family:Inter,sans-serif">
+      <p style="font-size:16px;font-weight:600;color:#DC2626;margin-bottom:8px">Authentication Error</p>
+      <p style="font-size:13px;color:#666;margin-bottom:16px">Could not initialise sign-in. Please refresh.</p>
+      <button onclick="location.reload()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Retry</button>
+    </div>`;
+  }
+}
 </script>
 
 </body>
