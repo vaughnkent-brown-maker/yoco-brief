@@ -1120,6 +1120,7 @@ async function saveToNotion() {
     const data = await r.json();
     if (r.ok) {
       btn.textContent = '✓ Saved';
+      window._notionPageId = data.id;
       if (data.url) window.open(data.url, '_blank');
     } else {
       btn.textContent = 'Error: ' + (data.error || 'Failed');
@@ -1173,6 +1174,30 @@ async function createSFTask() {
       btn.style.background = '#16A34A';
       const sfBase = _sf.sfInstance || 'https://yoco.lightning.force.com';
       status.innerHTML = `Task created — <a href="${sfBase}/${taskData.taskId}" target="_blank" style="color:#0066FF;font-weight:600">View in Salesforce ↗</a>`;
+
+      // Also update Notion to keep the repository current
+      btn.textContent = 'Updating Notion...';
+      try {
+        const notionRes = await fetch('/api/notion-update', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            pageId: window._notionPageId || null,
+            merchant,
+            am: _sf?.keyAccountManager || _sf?.owner || '',
+            notes: summary,
+            rawNotes: notes
+          })
+        });
+        const notionData = await notionRes.json();
+        if (notionRes.ok) {
+          status.innerHTML += ` · <span style="color:#16A34A;font-weight:600">Notion updated ✓</span>`;
+        } else {
+          status.innerHTML += ` · <span style="color:#D97706">Notion update skipped: ${notionData.error || 'no page'}</span>`;
+        }
+      } catch(e) {
+        status.innerHTML += ` · <span style="color:#D97706">Notion update failed</span>`;
+      }
+      btn.textContent = '✓ Logged to Salesforce';
     } else {
       btn.textContent = 'Error';
       status.textContent = taskData.error || 'Failed to create task';
