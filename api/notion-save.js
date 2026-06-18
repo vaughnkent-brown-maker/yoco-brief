@@ -31,6 +31,8 @@ module.exports = async function handler(req, res) {
 
   const amLower = (am || '').toLowerCase();
   const notionUserId = NOTION_USERS[amLower];
+
+  const briefUrl = sfData && sfData.id
     ? `https://yoco-brief.vercel.app/?merchant=${encodeURIComponent(merchant)}&accountId=${encodeURIComponent(sfData.id)}`
     : `https://yoco-brief.vercel.app/?merchant=${encodeURIComponent(merchant)}`;
 
