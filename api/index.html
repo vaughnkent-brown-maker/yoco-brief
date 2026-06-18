@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yoco AM Brief</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #F5F4F0; color: #1a1a1a; font-size: 14px; }
+
+/* Header */
+.header { background: #1a1a1a; padding: 0 2rem; display: flex; align-items: center; gap: 12px; height: 52px; }
+.badge { background: rgba(255,255,255,0.1); color: #aaa; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+
+/* Layout */
+.main { max-width: 960px; margin: 0 auto; padding: 2rem; }
+
+/* Generator card */
+.gen-card { background: #fff; border-radius: 14px; border: 1px solid #E5E4E0; padding: 1.75rem 2rem; margin-bottom: 1rem; }
+.gen-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+.gen-subtitle { color: #999; font-size: 12px; margin-bottom: 1.25rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+.field label { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 6px; }
+.field input { width: 100%; height: 40px; border: 1px solid #E5E4E0; border-radius: 8px; padding: 0 14px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+.field input:focus { border-color: #0066FF; }
+.btn-primary { height: 40px; padding: 0 22px; background: #0066FF; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-primary:hover { background: #0052cc; }
+.group-row { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+.group-row input[type=checkbox] { width: 15px; height: 15px; accent-color: #0066FF; cursor: pointer; }
+.group-row label { font-size: 13px; font-weight: 500; cursor: pointer; color: #444; }
+.group-row span { color: #999; font-weight: 400; }
+
+/* Status pills */
+.pills { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 1rem; }
+.pill { background: #fff; border: 1px solid #E5E4E0; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+.pdot { width: 7px; height: 7px; border-radius: 50%; background: #E5E4E0; flex-shrink: 0; }
+.pdot.live { background: #22C55E; }
+.pdot.loading { background: #F59E0B; animation: pulse 1s infinite; }
+.pdot.error { background: #EF4444; }
+.pdot.mock { background: #94A3B8; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+.pill strong { display: block; font-size: 12px; font-weight: 600; }
+.pill span { font-size: 11px; color: #888; }
+
+/* Account picker */
+.picker-card { background: #fff; border-radius: 14px; border: 1px solid #E5E4E0; padding: 1.5rem 2rem; margin-bottom: 1rem; display: none; }
+
+/* Brief output */
+#briefOutput { display: none; }
+.brief-card { background: #fff; border-radius: 14px; border: 1px solid #E5E4E0; overflow: hidden; }
+
+/* Brief header */
+.brief-hdr { padding: 1.5rem 2rem; border-bottom: 1px solid #F0EFE9; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.brief-title { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.brief-meta { font-size: 12px; color: #999; margin-top: 4px; }
+.brief-hdr-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; margin-top: 2px; }
+.btn-sf { height: 34px; padding: 0 14px; background: #00A1E0; color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; opacity: 0.4; pointer-events: none; transition: opacity 0.2s; }
+.btn-sf.active { opacity: 1; pointer-events: auto; }
+.btn-save { height: 34px; padding: 0 14px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* Loading */
+#loading { display: none; padding: 3rem; text-align: center; }
+.spin { width: 28px; height: 28px; border: 2.5px solid #E5E4E0; border-top-color: #0066FF; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loadingMsg { font-size: 13px; color: #888; }
+
+/* Error */
+#errBox { display: none; margin: 1.5rem; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px 16px; }
+.etitle { color: #DC2626; font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+
+/* Sections */
+.section { padding: 1.5rem 2rem; border-bottom: 1px solid #F0EFE9; }
+.section:last-child { border-bottom: none; }
+.slabel { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sdot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.live-tag { font-size: 9px; font-weight: 700; background: #DCFCE7; color: #16A34A; padding: 2px 6px; border-radius: 4px; }
+.notion-tag { font-size: 9px; font-weight: 700; background: #F3F4F6; color: #6B7280; padding: 2px 6px; border-radius: 4px; }
+
+/* Metric grid */
+.metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.metrics-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.metric { background: #F7F6F3; border-radius: 10px; padding: 12px 14px; }
+.mlabel { font-size: 10px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.mval { font-size: 16px; font-weight: 700; line-height: 1.2; }
+.msub { font-size: 11px; color: #888; margin-top: 3px; }
+
+/* Two-col info grid */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem; margin-top: 14px; }
+.ir { display: flex; padding: 7px 0; border-bottom: 1px solid #F5F4F0; }
+.ir:last-child { border-bottom: none; }
+.il { font-size: 12px; color: #888; width: 140px; flex-shrink: 0; }
+.iv { font-size: 13px; font-weight: 500; }
+
+/* Task row */
+.task-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid #F5F4F0; }
+.task-row:last-child { border-bottom: none; }
+
+/* Contacts */
+.contacts-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 8px; margin-top: 12px; }
+.contact-card { border: 1px solid #E5E4E0; border-radius: 10px; padding: 12px 14px; background: #fff; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+
+/* Product pills */
+.product-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.ppill { border-radius: 8px; padding: 8px 14px; }
+.ppill-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; opacity: 0.75; }
+.ppill-val { font-size: 13px; font-weight: 700; }
+
+/* Release cards */
+.rc { border: 1px solid #EDE9FE; border-radius: 9px; padding: 12px 14px; margin-bottom: 8px; background: #FAFAFE; }
+.rh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.rname { font-size: 13px; font-weight: 700; }
+.rsumm { font-size: 12px; color: #666; line-height: 1.5; margin-bottom: 7px; }
+.rtp { font-size: 12px; color: #5B21B6; background: #F5F3FF; border-radius: 6px; padding: 7px 10px; line-height: 1.5; }
+.tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+.tg { background: #DCFCE7; color: #16A34A; }
+.tb { background: #FEF3C7; color: #D97706; }
+.ta { background: #F3F4F6; color: #6B7280; }
+
+/* AI box */
+.ai-box { background: #F7F6F3; border-radius: 10px; padding: 16px 18px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; color: #333; }
+
+/* Cases */
+.case-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #F5F4F0; gap: 12px; }
+.case-row:last-child { border-bottom: none; }
+
+/* Highlight banner */
+.banner { border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.5; margin-bottom: 10px; }
+.banner-warn { background: #FFF7ED; border: 1px solid #FED7AA; color: #92400E; }
+.banner-info { background: #EDE9FE; border: 1px solid #DDD6FE; color: #5B21B6; }
+.banner-ok { background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; }
+.banner-alert { background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; }
+
+/* Industry grid */
+.industry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ind-box { border-radius: 9px; padding: 12px 14px; }
+
+/* Capital status colors */
+.cap-active { color: #16A34A; }
+.cap-offered { color: #D97706; }
+.cap-overdue { color: #DC2626; }
+.cap-eligible { color: #2563EB; }
+
+details summary { font-size: 12px; color: #888; cursor: pointer; padding: 5px 0; }
+</style>
+</head>
+<body>
+
+<!-- Header — clean, no buttons -->
+<div class="header">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72" style="height:22px;display:block">
+    <text x="4" y="62" font-family="Montserrat, Arial Black, sans-serif" font-weight="900" font-size="72" fill="white" letter-spacing="-1">YOCO</text>
+  </svg>
+  <div class="badge">AM Brief Generator</div>
+</div>
+
+<div class="main">
+
+  <!-- Generator form -->
+  <div class="gen-card">
+    <h2>Generate Merchant Brief</h2>
+    <p class="gen-subtitle">Live Salesforce · Notion product releases · AI synthesis</p>
+    <div class="form-row" style="grid-template-columns: 1fr auto;">
+      <div class="field"><label>Merchant Name</label><input id="merchant" placeholder="e.g. Wildsprout, Strangers Club..." /></div>
+      <button class="btn-primary" onclick="generate()">Generate Brief</button>
+    </div>
+    <div class="group-row">
+      <input type="checkbox" id="groupAccount">
+      <label for="groupAccount">Group Account <span>— show all sub-accounts under this head office</span></label>
+    </div>
+  </div>
+
+  <!-- Data source status -->
+  <div class="pills">
+    <div class="pill"><div class="pdot" id="dot-sf"></div><div><strong>Salesforce</strong><span id="sf-status">Ready</span></div></div>
+    <div class="pill"><div class="pdot" id="dot-rel"></div><div><strong>Product Releases</strong><span id="rel-status">Notion DB</span></div></div>
+    <div class="pill"><div class="pdot" id="dot-ai"></div><div><strong>AI Synthesis</strong><span id="ai-status">Gemini</span></div></div>
+  </div>
+
+  <!-- Account picker -->
+  <div id="accountPicker" class="picker-card">
+    <p style="font-weight:700;font-size:15px;margin-bottom:4px">Multiple accounts found</p>
+    <p style="font-size:13px;color:#888;margin-bottom:14px">Select the correct account to continue.</p>
+    <div id="accountList"></div>
+  </div>
+
+  <!-- Brief output -->
+  <div id="briefOutput">
+    <div class="brief-card">
+
+      <!-- Brief header -->
+      <div class="brief-hdr">
+        <div>
+          <div class="brief-title" id="briefTitle"></div>
+          <div class="brief-meta" id="briefMeta"></div>
+        </div>
+        <div class="brief-hdr-actions">
+          <button class="btn-sf" id="hSfBtn" onclick="openSalesforce()">View in Salesforce</button>
+          <button id="hAdminBtn" onclick="openAdmin()" style="display:none;height:34px;padding:0 14px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Admin</button>
+          <button class="btn-save" id="saveBtn" onclick="saveToNotion()">Save to Notion</button>
+        </div>
+      </div>
+
+      <!-- Loading / error -->
+      <div id="loading"><div class="spin"></div><div id="loadingMsg">Fetching account data...</div></div>
+      <div id="errBox"><div class="etitle">Brief generation failed</div><div id="errMsg" style="font-size:13px;color:#666;margin-top:2px"></div></div>
+      <div id="sf-banner" style="display:none;margin:0 2rem 1rem"></div>
+      <div id="ai-banner" style="display:none;margin:0 2rem 1rem"></div>
+      <div id="general-banner" style="display:none;margin:0 2rem 1rem"></div>
+
+      <!-- 1. Account Snapshot -->
+      <div class="section" id="sfSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#00A1E0"></span>Account Snapshot <span class="live-tag">Live · Salesforce</span></div>
+        <div class="metrics" id="sfMetrics"></div>
+        <div class="info-grid" id="sfDetails"></div>
+        <div id="sfTasks"></div>
+      </div>
+
+      <!-- 2. Product Usage -->
+      <div class="section" id="productsSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Product Usage <span class="live-tag">Live · Salesforce</span></div>
+        <div id="productsContent"></div>
+      </div>
+
+      <!-- 3. Tasks -->
+      <div class="section" id="tasksSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Tasks <span class="live-tag">Live · Salesforce</span></div>
+        <div id="tasksContent"></div>
+      </div>
+
+      <!-- 4. Contacts -->
+      <div id="sfContacts"></div>
+
+      <!-- 5. Open Opportunities -->
+      <div class="section" id="opportunitiesSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Open Opportunities <span class="live-tag">Live · Salesforce</span></div>
+        <div id="opportunitiesContent"></div>
+      </div>
+
+      <!-- 6. Capital -->
+      <div class="section" id="capitalSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Yoco Capital</div>
+        <div id="capitalContent"></div>
+      </div>
+
+      <!-- 7. Support & Cases -->
+      <div class="section" id="intercomSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#EF4444"></span>Support & Cases <span class="live-tag">Live · Salesforce</span></div>
+        <div id="intercomContent"></div>
+      </div>
+
+      <!-- 8. Sub-accounts (group only) -->
+      <div class="section" id="subAccountsSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#0066FF"></span>Group Account — Locations <span class="live-tag">Live · Salesforce</span></div>
+        <div id="subAccountsContent"></div>
+      </div>
+
+      <!-- 9. Previous Activity -->
+      <div class="section" id="prevTasksSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Previous Activity</div>
+        <div id="prevTasksContent"></div>
+      </div>
+
+      <!-- 10. Industry Intelligence -->
+      <div class="section" id="industrySection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#16A34A"></span>Industry Intelligence</div>
+        <div id="industryContent"></div>
+      </div>
+
+      <!-- 11. Product Releases -->
+      <div class="section" id="relSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#7C3AED"></span>Upcoming Releases <span class="notion-tag">Notion</span></div>
+        <div id="relContent"></div>
+      </div>
+
+      <!-- 12. AI Synthesis -->
+      <div class="section" id="aiSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#1a1a1a"></span>AI Pre-meeting Brief</div>
+        <div class="ai-box" id="aiContent"></div>
+      </div>
+
+      <!-- Post-Meeting Notes -->
+      <div class="section" id="postMeetingSection" style="display:none">
+        <div class="slabel"><span class="sdot" style="background:#F59E0B"></span>Post-Meeting Notes</div>
+        <p style="font-size:12px;color:#888;margin-bottom:12px">Add notes, transcription, next steps, or anything discussed. This will be summarised by AI and logged as an open task in Salesforce.</p>
+        <textarea id="postMeetingNotes" placeholder="e.g. Met with Dean, discussed upgrading to Pro plan. Merchant interested in Loyalty. Follow up on Capital eligibility. Next step: send proposal by Friday..." style="width:100%;min-height:140px;border:1px solid #E5E4E0;border-radius:10px;padding:12px 14px;font-size:13px;font-family:inherit;line-height:1.6;outline:none;resize:vertical;transition:border-color 0.15s" onfocus="this.style.borderColor='#0066FF'" onblur="this.style.borderColor='#E5E4E0'"></textarea>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <button onclick="createSFTask()" id="createTaskBtn" style="height:38px;padding:0 20px;background:#0066FF;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Log to Salesforce ↗</button>
+          <div id="taskStatus" style="font-size:12px;color:#888"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const RELEASES = [
+  {name:"Plans 2.0",stage:"Live to All",date:"2026-06-01",tier:"Tier 1",segments:["all"],summary:"New 3-tier structure: Core, Plus (R249/mo), Pro. Unlimited locations on Plus & Pro. Tiered transaction rates. 30-day free trial.",talking_point:"Merchants on Core can unlock lower fees and unlimited locations by moving to Plus or Pro. 30-day free trial removes the risk."},
+  {name:"Loyalty",stage:"Live to All",date:"2026-06-15",tier:"Tier 3",segments:["F&B","Retail","Hospitality","Coffee","Restaurant","QSR","Food","drink"],summary:"Merchants reward repeat customers through Yoco. Requires Plus/Pro plan. Phased release.",talking_point:"Perfect for F&B and retail merchants wanting to drive repeat visits. Natural upsell to Plus or Pro."},
+  {name:"Tables",stage:"Live to All",date:"2026-06-15",tier:"Tier 2",segments:["F&B","Restaurant","Hospitality","Food","drink"],summary:"Table management: assignment, guest count, staff ownership, movement. Improves FOH/BOH coordination.",talking_point:"Big win for sit-down restaurants — staff manage tables digitally, reducing errors and improving service flow."},
+  {name:"Selling Modes",stage:"Live to All",date:"2026-06-15",tier:"Tier 2",segments:["all"],summary:"Customise POS per business: Dine-in, Quick Order, Appointments, Shop, or Standard mode.",talking_point:"Makes Yoco POS feel purpose-built for their business. F&B gets Dine-in, H&B gets Appointments mode."},
+  {name:"Orders",stage:"Live to All",date:"2026-06-15",tier:"Tier 2",segments:["F&B","Restaurant","QSR","Hospitality","Takeaway","Food","drink"],summary:"New Orders tab with takeaway/sit-down context and improved visibility across Counter and Handheld.",talking_point:"For F&B merchants managing multiple order types — cleaner visibility across the floor."},
+  {name:"Item Level Refunds",stage:"Live to All",date:"2026-06-17",tier:"Tier 2",segments:["Retail","F&B","Food","all"],summary:"Select specific products to refund. Refunded products automatically replenish stock levels.",talking_point:"Closes a key gap for retail merchants — refund individual items without voiding the whole transaction."},
+  {name:"Health & Beauty POS",stage:"Live to All",date:"2026-06-17",tier:"Tier 1",segments:["Health & Beauty","Salon","Spa","Wellness","Appointments"],summary:"Full H&B POS through Appointments Mode. Services on all plans, appointments on Plus in H&B Mode.",talking_point:"Yoco is now purpose-built for salons and spas. Appointments, services, and payments in one place."},
+  {name:"Yoco Savings",stage:"Live to All",date:"2026-05-29",tier:"Tier 1",segments:["all"],summary:"Earn interest on business funds held with Yoco. Available to all merchants.",talking_point:"Strong cashflow conversation — merchants earn on idle business funds."},
+  {name:"Barcode Scanning",stage:"Live to All",date:"2026-06-07",tier:"Tier 2",segments:["Retail","Wholesale","Grocery"],summary:"Barcode scanning in the Yoco app for faster product lookup and checkout.",talking_point:"Game changer for retail merchants with large catalogues — speeds up checkout significantly."},
+  {name:"Voids & Discounts Controls",stage:"Live to All",date:"2026-06-08",tier:"Tier 2",segments:["all"],summary:"Improved control over who can apply voids and discounts, plus better reporting.",talking_point:"For merchants with staff — managers can now control and audit who is voiding and discounting."},
+  {name:"Rates Decrease for Core Plan",stage:"Live to All",date:"2026-06-07",tier:"Tier 2",segments:["all"],summary:"Transaction rate reduction for merchants on the Core plan.",talking_point:"Good news for Core plan merchants — their rates have come down. Reinforce Yoco value."},
+  {name:"Yoco Connect Slice 2",stage:"Beta",date:"2026-06-07",tier:"Tier 2",segments:["eCommerce","Online","Shopify","WooCommerce"],summary:"Second phase of Yoco Connect — improved integrations with third-party platforms.",talking_point:"For merchants using Shopify or other eCommerce platforms alongside in-store Yoco."}
+];
+
+const INDUSTRY_INSIGHTS = {
+  'food': { peakTimes:'Fri–Sun evenings, public holidays', avgBasket:'R180–R350', challenges:'Staff turnover, load shedding impact on trade, food cost inflation', yocoFit:'Tables, Orders, Selling Modes (Dine-in/Quick Order), Loyalty', watchOuts:'Seasonality dips in Jan/Feb, competitor POS providers aggressive in F&B', goodToKnow:'F&B merchants on Core plan typically see 40%+ uplift moving to Plus due to Loyalty and Tables features' },
+  'retail': { peakTimes:'Dec–Jan, month-end paydays, Black Friday', avgBasket:'R250–R600', challenges:'Inventory management, shrinkage, online competition', yocoFit:'Barcode Scanning, Item Level Refunds, Voids & Discounts Controls, Yoco Connect (Shopify)', watchOuts:'High churn risk if POS issues arise during peak season', goodToKnow:'Retail merchants benefit most from the new Item Level Refunds — reduces friction significantly' },
+  'health': { peakTimes:'Weekday mornings, pre-holiday grooming', avgBasket:'R400–R900', challenges:'Appointment no-shows, staff commission tracking', yocoFit:'H&B POS, Appointments Mode, Selling Modes, Services on all plans', watchOuts:'High sensitivity to app reliability — any downtime costs appointments', goodToKnow:'Health & Beauty POS just launched — this is a major value add for salons on Plus plan' },
+  'hospitality': { peakTimes:'Weekends, school holidays, Cape Town high season (Dec–Mar)', avgBasket:'R300–R800', challenges:'Multi-location coordination, seasonal cash flow', yocoFit:'Tables, Orders, Order Types, Selling Modes, Yoco Capital for off-season float', watchOuts:'Cape Town merchants face July–Aug low season — proactive Capital conversation', goodToKnow:'Group accounts in hospitality often have inconsistent plan adoption across locations' },
+  'default': { peakTimes:'Month-end, public holidays', avgBasket:'R150–R400', challenges:'Load shedding impact, cash flow management', yocoFit:'Plans 2.0, Yoco Savings, Voids & Discounts Controls', watchOuts:'Ensure fully onboarded — incomplete onboarding increases churn risk significantly', goodToKnow:'All merchants on Core plan qualify for the recent rates decrease — good retention conversation' }
+};
+
+const MSGS = ['Fetching account data from Salesforce...','Finding relevant product releases...','Generating AI synthesis...','Almost done...'];
+let _sf = null, _timer = null, _idx = 0;
+
+function showBanner(id, msg, type='warn') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const styles = {
+    warn: 'background:#FFF7ED;border:1px solid #FED7AA;color:#92400E',
+    alert: 'background:#FEF2F2;border:1px solid #FECACA;color:#DC2626',
+    info: 'background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8',
+    ok: 'background:#F0FDF4;border:1px solid #BBF7D0;color:#15803D'
+  };
+  el.innerHTML = `<div style="border-radius:10px;padding:12px 16px;font-size:13px;line-height:1.6;${styles[type]||styles.warn}">${msg}<button onclick="this.parentElement.parentElement.style.display='none'" style="float:right;background:none;border:none;cursor:pointer;font-size:16px;line-height:1;opacity:0.5;margin-left:8px">✕</button></div>`;
+  el.style.display = 'block';
+}
+
+function clearBanners() {
+  ['sf-banner','ai-banner','general-banner'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+  });
+}
+
+function dot(id, state) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'pdot' + (state ? ' ' + state : '');
+}
+function openSalesforce() { window.open(_sf?.sfUrl || 'https://yoco.lightning.force.com', '_blank'); }
+function openAdmin() { if (_sf?.buuid) window.open(`https://admin.yoco.co.za/businesses/${_sf.buuid}/details/`, '_blank'); }
+function activateBtns() {
+  const b = document.getElementById('hSfBtn');
+  if (b) b.classList.add('active');
+  const a = document.getElementById('hAdminBtn');
+  if (a && _sf?.buuid) { a.style.display = 'block'; }
+}
+
+function getRelevant(industry) {
+  const ctx = (industry || '').toLowerCase();
+  return RELEASES.filter(r => r.segments.includes('all') || r.segments.some(s => ctx.includes(s.toLowerCase())));
+}
+
+function getIndustryInsight(industry) {
+  const ind = (industry || '').toLowerCase();
+  if (ind.includes('food') || ind.includes('drink') || ind.includes('restaurant') || ind.includes('cafe') || ind.includes('beverage')) return INDUSTRY_INSIGHTS.food;
+  if (ind.includes('retail') || ind.includes('shop') || ind.includes('store') || ind.includes('grocery')) return INDUSTRY_INSIGHTS.retail;
+  if (ind.includes('health') || ind.includes('beauty') || ind.includes('salon') || ind.includes('spa') || ind.includes('wellness')) return INDUSTRY_INSIGHTS.health;
+  if (ind.includes('hospitality') || ind.includes('hotel') || ind.includes('accommodation') || ind.includes('tourism')) return INDUSTRY_INSIGHTS.hospitality;
+  return INDUSTRY_INSIGHTS.default;
+}
+
+function fmt(n) { return n ? 'R' + Number(n).toLocaleString('en-ZA') : '—'; }
+
+// --- RENDER FUNCTIONS ---
+
+function renderSF(sf) {
+  document.getElementById('sfSection').style.display = 'block';
+
+  // Try extract debit/credit rates from previous activity notes
+  let inferredDebit = null;
+  let inferredCredit = null;
+  if (!sf.transactionRate && sf.previousTasks?.length) {
+    for (const t of sf.previousTasks) {
+      const text = (t.description || '') + ' ' + (t.subject || '');
+      if (!inferredDebit) {
+        const dm = text.match(/debit[^\d]*(\d+[\.,]\d+)\s*%/i) || text.match(/(\d+[\.,]\d+)\s*%[^\d]*debit/i);
+        if (dm) inferredDebit = dm[1].replace(',','.') + '%';
+      }
+      if (!inferredCredit) {
+        const cm = text.match(/credit[^\d]*(\d+[\.,]\d+)\s*%/i) || text.match(/(\d+[\.,]\d+)\s*%[^\d]*credit/i) || text.match(/amex[^\d]*(\d+[\.,]\d+)\s*%/i) || text.match(/(\d+[\.,]\d+)\s*%[^\d]*amex/i);
+        if (cm) inferredCredit = cm[1].replace(',','.') + '%';
+      }
+      if (inferredDebit && inferredCredit) break;
+    }
+  }
+  const rateDisplay = sf.transactionRate
+    ? `<div class="msub" style="color:#D97706;font-weight:600">Rate: ${sf.transactionRate}</div>`
+    : (inferredDebit || inferredCredit)
+      ? `<div class="msub" style="color:#D97706;font-weight:600">
+          ${inferredDebit ? `Debit: ~${inferredDebit}` : ''}${inferredDebit && inferredCredit ? ' · ' : ''}${inferredCredit ? `Credit: ~${inferredCredit}` : ''}
+          <span style="font-weight:400;color:#aaa;font-size:9px;display:block;margin-top:1px">from notes — confirm first</span>
+         </div>`
+      : '<div class="msub" style="color:#bbb">Rate: not on SF</div>';
+
+  // Top metrics — TPV big, key account, billing, location
+  document.getElementById('sfMetrics').innerHTML = `
+    <div class="metric">
+      <div class="mlabel">30-Day TPV</div>
+      <div class="mval" style="font-size:18px">${sf.tpv30Day ? fmt(sf.tpv30Day) : '—'}</div>
+      ${sf.volumeThisMonth ? `<div class="msub">This month: ${fmt(sf.volumeThisMonth)}</div>` : ''}
+    </div>
+    <div class="metric">
+      <div class="mlabel">Billing Package</div>
+      <div class="mval" style="font-size:15px">${sf.billingPackage || '—'}</div>
+      ${rateDisplay}
+    </div>
+    <div class="metric">
+      <div class="mlabel">Key Account</div>
+      <div class="mval" style="font-size:15px">${sf.isKeyAccount ? '✅ Yes' : 'No'}</div>
+      <div class="msub">${sf.owner || '—'}</div>
+    </div>
+    <div class="metric">
+      <div class="mlabel">Location</div>
+      ${sf.fullAddress
+        ? `<div class="mval" style="font-size:13px"><a href="https://www.google.com/maps/search/${encodeURIComponent(sf.fullAddress)}" target="_blank" style="color:#0066FF;text-decoration:none;font-weight:700" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${sf.fullAddress} ↗</a></div>`
+        : `<div class="mval" style="font-size:14px">${sf.city || '—'}</div>`}
+      <div class="msub">${sf.industry || '—'}</div>
+    </div>`;
+
+  // Detail rows
+  document.getElementById('sfDetails').innerHTML = `
+    <div>
+      ${sf.phone ? `<div class="ir"><span class="il">Phone</span><span class="iv">${sf.phone}</span></div>` : ''}
+      ${sf.createdDate ? `<div class="ir"><span class="il">On Yoco since</span><span class="iv">${new Date(sf.createdDate).toLocaleDateString('en-ZA')}</span></div>` : ''}
+      ${sf.fullyOnboarded != null ? `<div class="ir"><span class="il">Fully onboarded</span><span class="iv">${sf.fullyOnboarded ? '✅ Yes' : '❌ No'}</span></div>` : ''}
+      ${sf.nps ? `<div class="ir"><span class="il">NPS Score</span><span class="iv">${sf.nps}</span></div>` : ''}
+    </div>
+    <div>
+      ${sf.openDeals ? `<div class="ir"><span class="il">Open deals</span><span class="iv">${sf.openDeals}</span></div>` : ''}
+      ${sf.wonDeals ? `<div class="ir"><span class="il">Won deals</span><span class="iv">${sf.wonDeals}</span></div>` : ''}
+      ${sf.bank ? `<div class="ir"><span class="il">Bank</span><span class="iv">${sf.bank.name}${sf.bank.type ? ` · ${sf.bank.type}` : ''}</span></div>` : ''}
+      ${sf.health ? `<div class="ir"><span class="il">Account Health</span><span class="iv">${sf.health}</span></div>` : ''}
+    </div>`;
+
+  // Open tasks
+  // tasks rendered by renderTasks()
+}
+
+function renderTasks(sf) {
+  const sec = document.getElementById('tasksSection');
+  const con = document.getElementById('tasksContent');
+  const tasks = sf.openTasks || [];
+  if (!tasks.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  const sfBase = sf.sfInstance || 'https://yoco.lightning.force.com';
+  const today = new Date();
+
+  con.innerHTML = tasks.map(t => {
+    const due = t.dueDate ? new Date(t.dueDate) : null;
+    const isOverdue = due && due < today;
+    const isDueSoon = due && !isOverdue && (due - today) <= 7*24*60*60*1000;
+    return `
+    <div class="task-row" style="border-left:3px solid ${isOverdue?'#DC2626':isDueSoon?'#F59E0B':'#E5E4E0'};padding-left:12px;margin-bottom:4px">
+      <div style="flex:1">
+        ${t.id ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>`
+               : `<p style="font-size:13px;font-weight:600">${t.subject}</p>`}
+        <p style="font-size:11px;color:${isOverdue?'#DC2626':isDueSoon?'#D97706':'#888'};margin-top:2px">
+          ${isOverdue ? '🚨 Overdue' : isDueSoon ? '⏰ Due soon' : t.status} · Due ${t.dueDate || '—'}
+        </p>
+      </div>
+      <span style="font-size:11px;font-weight:600;color:${t.priority==='High'?'#DC2626':'#D97706'}">${t.priority||''}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderProducts(sf) {
+  const sec = document.getElementById('productsSection');
+  const con = document.getElementById('productsContent');
+  sec.style.display = 'block';
+
+  let gatewayVal = null;
+  if (sf.hasGateway !== null && sf.hasGateway !== undefined) {
+    if (typeof sf.hasGateway === 'boolean') gatewayVal = sf.hasGateway ? 'Active' : 'Not active';
+    else if (typeof sf.hasGateway === 'number') gatewayVal = sf.hasGateway > 0 ? `Active (${fmt(sf.hasGateway)})` : 'Not active';
+    else gatewayVal = sf.hasGateway;
+  }
+  let savingsVal = null;
+  if (sf.hasSavings !== null && sf.hasSavings !== undefined) {
+    if (typeof sf.hasSavings === 'boolean') savingsVal = sf.hasSavings ? 'Active' : 'Not active';
+    else savingsVal = sf.hasSavings;
+  }
+
+  const products = [
+    { label:'Billing Plan', value:sf.billingPackage, bg:'#DBEAFE', color:'#1D4ED8' },
+    { label:'Terminals', value:sf.terminalCount ? `${sf.terminalCount} device${sf.terminalCount>1?'s':''}` : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Yoco Gateway', value:gatewayVal, bg:gatewayVal?.includes('Active')?'#DCFCE7':'#F3F4F6', color:gatewayVal?.includes('Active')?'#16A34A':'#6B7280' },
+    { label:'Yoco Savings', value:savingsVal, bg:savingsVal==='Active'?'#DCFCE7':'#F3F4F6', color:savingsVal==='Active'?'#16A34A':'#6B7280' },
+    { label:'Segment', value:sf.segment, bg:'#F5F3FF', color:'#7C3AED' },
+    { label:'Transaction Rate', value:sf.transactionRate || null, bg:'#FEF3C7', color:'#D97706' },
+    { label:'Integrations', value:sf.integrations || null, bg:'#FEF3C7', color:'#D97706' },
+    { label:'Website Plugins', value:sf.websitePlugins || null, bg:'#FEF3C7', color:'#D97706' },
+    { label:'Yoco Connect', value:sf.hasConnect ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Shopify', value:sf.hasShopify ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'WooCommerce', value:sf.hasWoo ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Zapier', value:sf.hasZapier ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Invoicing', value:sf.hasInvoicing ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+    { label:'Bookings', value:sf.hasBookings ? 'Active' : null, bg:'#DCFCE7', color:'#16A34A' },
+  ].filter(p => p.value !== null && p.value !== undefined && p.value !== '');
+
+  con.innerHTML = products.length
+    ? `<div class="product-pills">${products.map(p => `
+        <div class="ppill" style="background:${p.bg}">
+          <div class="ppill-label" style="color:${p.color}">${p.label}</div>
+          <div class="ppill-val" style="color:${p.color}">${p.value}</div>
+        </div>`).join('')}</div>`
+    : '<p style="font-size:13px;color:#888">Product usage data not available.</p>';
+}
+
+function renderOpportunities(sf) {
+  const sec = document.getElementById('opportunitiesSection');
+  const con = document.getElementById('opportunitiesContent');
+  const opps = sf.opportunities || [];
+  if (!opps.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  const stageColor = {
+    'New': '#2563EB', 'Prospecting': '#6B7280', 'Qualification': '#2563EB',
+    'Needs Analysis': '#2563EB', 'Value Proposition': '#D97706',
+    'Proposal/Price Quote': '#D97706', 'Negotiation/Review': '#F59E0B',
+    'Closed Won': '#16A34A', 'Closed Lost': '#DC2626'
+  };
+  const stageBg = {
+    'New': '#EFF6FF', 'Prospecting': '#F3F4F6', 'Qualification': '#EFF6FF',
+    'Needs Analysis': '#EFF6FF', 'Value Proposition': '#FEF3C7',
+    'Proposal/Price Quote': '#FEF3C7', 'Negotiation/Review': '#FEF9C3',
+    'Closed Won': '#DCFCE7', 'Closed Lost': '#FEF2F2'
+  };
+
+  con.innerHTML = opps.map(o => {
+    const isOverdue = o.closeDate && new Date(o.closeDate) < new Date();
+    return `
+    <div style="border:1px solid ${isOverdue?'#FECACA':'#E5E4E0'};border-radius:10px;padding:14px 16px;margin-bottom:8px;background:${isOverdue?'#FFF5F5':'#fff'}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px">
+        <div style="flex:1">
+          ${o.sfUrl ? `<a href="${o.sfUrl}" target="_blank" style="font-size:14px;font-weight:700;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${o.name} ↗</a>`
+                    : `<p style="font-size:14px;font-weight:700">${o.name}</p>`}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          ${o.amount ? `<p style="font-size:15px;font-weight:700">${fmt(o.amount)}</p>` : ''}
+          ${o.stage ? `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;background:${stageBg[o.stage]||'#F3F4F6'};color:${stageColor[o.stage]||'#6B7280'}">${o.stage}</span>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:${o.description||o.nextStep?'8px':'0'}">
+        ${o.type ? `<span style="font-size:12px;color:#888">Type: <strong style="color:#1a1a1a">${o.type}</strong></span>` : ''}
+        ${o.leadSource ? `<span style="font-size:12px;color:#888">Source: <strong style="color:#1a1a1a">${o.leadSource}</strong></span>` : ''}
+        ${(o.probability !== null && o.probability !== undefined) ? `<span style="font-size:12px;color:#888">Probability: <strong style="color:#1a1a1a">${o.probability}%</strong></span>` : ''}
+        ${o.owner ? `<span style="font-size:12px;color:#888">Owner: <strong style="color:#1a1a1a">${o.owner}</strong></span>` : ''}
+        ${o.closeDate ? `<span style="font-size:12px;color:${isOverdue?'#DC2626':'#888'}">Close: <strong>${o.closeDate}${isOverdue?' ⚠️ Overdue':''}</strong></span>` : ''}
+      </div>
+      ${o.nextStep ? `<p style="font-size:12px;background:#F0FDF4;border-radius:6px;padding:7px 10px;color:#15803D"><strong>Next step:</strong> ${o.nextStep}</p>` : ''}
+      ${o.description ? `<p style="font-size:12px;color:#666;line-height:1.5;margin-top:6px">${o.description.slice(0,200)}${o.description.length>200?'...':''}</p>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderCapital(sf) {
+  const sec = document.getElementById('capitalSection');
+  const con = document.getElementById('capitalContent');
+  const hasData = sf.capitalBalance !== null || sf.capitalTaken !== null || sf.capitalStatus !== null || sf.capitalEligible !== null || sf.capitalLimit !== null;
+
+  sec.style.display = 'block';
+  if (!hasData) {
+    con.innerHTML = `<p style="font-size:13px;color:#888">No Capital data on this account. <span style="color:#7C3AED;font-weight:600">Consider raising Capital eligibility in this meeting.</span></p>`;
+    return;
+  }
+
+  const statusColor = { 'Active':'#16A34A','Offered':'#D97706','Repaid':'#6B7280','Overdue':'#DC2626','Eligible':'#2563EB' };
+  const isRepaid = sf.capitalStatus?.toLowerCase().includes('repaid') || sf.capitalStatus?.toLowerCase().includes('paid');
+  const hasOffer = sf.capitalLimit && parseFloat(sf.capitalLimit) > 0;
+
+  con.innerHTML = `
+    <div class="metrics" style="margin-bottom:12px">
+      ${sf.capitalTaken ? `<div class="metric"><div class="mlabel">Capital Taken</div><div class="mval">${fmt(sf.capitalTaken)}</div>${sf.capitalFirstDate ? `<div class="msub">First: ${sf.capitalFirstDate.split('T')[0]}</div>` : ''}</div>` : ''}
+      ${sf.capitalBalance ? `<div class="metric"><div class="mlabel">Outstanding</div><div class="mval">${fmt(sf.capitalBalance)}</div></div>` : ''}
+      ${sf.capitalLimit ? `<div class="metric"><div class="mlabel">Offer Amount</div><div class="mval" style="color:${hasOffer?'#7C3AED':'#1a1a1a'}">${fmt(sf.capitalLimit)}</div>${sf.capitalOfferExpiry ? `<div class="msub">Expires: ${sf.capitalOfferExpiry.split('T')[0]}</div>` : ''}</div>` : ''}
+      ${sf.capitalStatus ? `<div class="metric"><div class="mlabel">Status</div><div class="mval" style="font-size:13px;color:${statusColor[sf.capitalStatus]||'#1a1a1a'}">${sf.capitalStatus}</div>${sf.capitalProvider ? `<div class="msub">via ${sf.capitalProvider}</div>` : ''}</div>` : ''}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px;font-size:12px;color:#666">
+      ${sf.capitalLastDate ? `<span>Last advance: <strong style="color:#1a1a1a">${sf.capitalLastDate.split('T')[0]}</strong></span>` : ''}
+      ${sf.capitalRepeat ? `<span>Repeat customer: <strong style="color:#16A34A">✅ Yes</strong></span>` : ''}
+    </div>
+    ${sf.capitalStatus?.toLowerCase().includes('active') ? `<div class="banner banner-warn">⚠️ <strong>Active Capital loan</strong> — be mindful of repayment deductions when discussing TPV trends.</div>` : ''}
+    ${sf.capitalStatus?.toLowerCase().includes('overdue') ? `<div class="banner banner-alert">🚨 <strong>Overdue Capital</strong> — handle with care, escalate if needed.</div>` : ''}
+    ${hasOffer && !sf.capitalStatus?.toLowerCase().includes('active') ? `<div class="banner banner-info">💡 <strong>Capital offer available: ${fmt(sf.capitalLimit)}</strong>${sf.capitalOfferExpiry ? ` — expires ${sf.capitalOfferExpiry.split('T')[0]}` : ''}. Raise this in the meeting.</div>` : ''}
+    ${isRepaid && hasOffer ? `<div class="banner banner-ok">✅ <strong>Previous Capital repaid</strong> — great time to discuss a new advance of ${fmt(sf.capitalLimit)}.</div>` : ''}`;
+}
+
+function renderIntercom(sf) {
+  const sec = document.getElementById('intercomSection');
+  const con = document.getElementById('intercomContent');
+  const hasCases = sf.cases?.length > 0;
+  if (!hasCases) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  const openCases = (sf.cases || []).filter(c => !['Closed','Resolved'].includes(c.status));
+  const closedCases = (sf.cases || []).filter(c => ['Closed','Resolved'].includes(c.status));
+
+  const topIssues = {};
+  (sf.cases || []).forEach(c => {
+    const s = (c.subject || '').toLowerCase();
+    if (s.includes('payment') || s.includes('transaction')) topIssues['Payment issues'] = (topIssues['Payment issues']||0)+1;
+    else if (s.includes('terminal') || s.includes('device') || s.includes('hardware')) topIssues['Hardware'] = (topIssues['Hardware']||0)+1;
+    else if (s.includes('app') || s.includes('software')) topIssues['App issues'] = (topIssues['App issues']||0)+1;
+    else if (s.includes('payout') || s.includes('settlement')) topIssues['Payout'] = (topIssues['Payout']||0)+1;
+    else if (s.includes('account') || s.includes('login')) topIssues['Account access'] = (topIssues['Account access']||0)+1;
+    else topIssues['Other'] = (topIssues['Other']||0)+1;
+  });
+  const issuesSummary = Object.entries(topIssues).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k} (${v})`).join(', ');
+
+  const statusBg = {'Open':'#FEF2F2','New':'#FEF2F2','In Progress':'#FEF3C7','Closed':'#F3F4F6','Resolved':'#DCFCE7'};
+  const statusColor = {'Open':'#DC2626','New':'#DC2626','In Progress':'#D97706','Closed':'#6B7280','Resolved':'#16A34A'};
+
+  con.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="metric">
+        <div class="mlabel">Open Cases</div>
+        <div class="mval" style="color:${openCases.length > 0 ? '#DC2626' : '#16A34A'}">${openCases.length}</div>
+        <div class="msub">of ${sf.cases?.length||0} total</div>
+      </div>
+      <div class="metric">
+        <div class="mlabel">Resolved</div>
+        <div class="mval">${closedCases.length}</div>
+        <div class="msub">cases closed</div>
+      </div>
+    </div>
+    ${issuesSummary ? `<div class="banner banner-warn" style="margin-bottom:12px"><strong>Most common:</strong> ${issuesSummary}</div>` : ''}
+    ${sf.intercomLastContact ? `<p style="font-size:12px;color:#888;margin-bottom:10px">Last Intercom contact: <strong style="color:#1a1a1a">${sf.intercomLastContact}</strong></p>` : ''}
+    <div>
+      ${sf.cases.slice(0,8).map(c => `
+        <div class="case-row">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              <span style="font-size:10px;color:#aaa">#${c.caseNumber||c.id?.slice(-6)||'—'}</span>
+              ${c.origin ? `<span style="font-size:10px;color:#aaa">· ${c.origin}</span>` : ''}
+            </div>
+            <a href="${(_sf?.sfInstance||'https://yoco.lightning.force.com')}/${c.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${c.subject||'No subject'} ↗</a>
+            ${c.description ? `<p style="font-size:12px;color:#666;margin-top:2px;line-height:1.4">${c.description.slice(0,120)}${c.description.length>120?'...':''}</p>` : ''}
+            <p style="font-size:11px;color:#bbb;margin-top:3px">${c.created||''} ${c.closed ? '→ closed '+c.closed : ''}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+            <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${statusBg[c.status]||'#F3F4F6'};color:${statusColor[c.status]||'#6B7280'}">${c.status}</span>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderSubAccounts(children) {
+  const sec = document.getElementById('subAccountsSection');
+  const con = document.getElementById('subAccountsContent');
+  sec.style.display = 'block';
+
+  if (!children?.length) {
+    con.innerHTML = '<p style="font-size:13px;color:#888">No sub-accounts found under this head office.</p>';
+    return;
+  }
+
+  const totalTPV = children.reduce((sum,c) => sum + (parseFloat(c.tpv30Day)||0), 0);
+  const onboarded = children.filter(c => c.fullyOnboarded).length;
+
+  con.innerHTML = `
+    <div class="metrics-3" style="margin-bottom:14px">
+      <div class="metric"><div class="mlabel">Locations</div><div class="mval">${children.length}</div><div class="msub">Sub-accounts</div></div>
+      <div class="metric"><div class="mlabel">Combined 30-Day TPV</div><div class="mval">${totalTPV > 0 ? fmt(totalTPV) : '—'}</div></div>
+      <div class="metric"><div class="mlabel">Fully Onboarded</div><div class="mval">${onboarded} / ${children.length}</div></div>
+    </div>
+    ${children.map(c => `
+    <div style="border:1px solid #E5E4E0;border-radius:10px;overflow:hidden;margin-bottom:8px">
+      <div style="background:#F7F6F3;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <p style="font-weight:700;font-size:13px">${c.name}</p>
+          <p style="font-size:11px;color:#888">${c.city||'—'}, ${c.country||'—'} · ${c.owner||'—'}</p>
+        </div>
+        <div style="text-align:right">
+          ${c.tpv30Day ? `<p style="font-size:14px;font-weight:700">${fmt(c.tpv30Day)}</p><p style="font-size:11px;color:#888">30-day TPV</p>` : ''}
+        </div>
+      </div>
+      <div style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+        ${c.billingPackage ? `<div><span style="font-size:11px;color:#888">Package</span><br><span style="font-size:13px;font-weight:600">${c.billingPackage}</span></div>` : ''}
+        ${c.industry ? `<div><span style="font-size:11px;color:#888">Industry</span><br><span style="font-size:13px;font-weight:600">${c.industry}</span></div>` : ''}
+        ${c.fullyOnboarded != null ? `<div><span style="font-size:11px;color:#888">Onboarded</span><br><span style="font-size:13px;font-weight:600">${c.fullyOnboarded ? '✅' : '❌'}</span></div>` : ''}
+        <div style="margin-left:auto">
+          <a href="${c.sfUrl}" target="_blank" style="font-size:12px;color:#00A1E0;font-weight:600;text-decoration:none">Salesforce →</a>
+        </div>
+      </div>
+    </div>`).join('')}`;
+}
+
+function renderPreviousTasks(tasks) {
+  if (!tasks?.length) return;
+  const sec = document.getElementById('prevTasksSection');
+  const con = document.getElementById('prevTasksContent');
+  sec.style.display = 'block';
+  const sfBase = _sf?.sfInstance || 'https://yoco.lightning.force.com';
+  con.innerHTML = tasks.map(t => `
+    <div class="task-row">
+      <div style="flex:1">
+        ${t.id
+          ? `<a href="${sfBase}/${t.id}" target="_blank" style="font-size:13px;font-weight:600;color:#1a1a1a;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${t.subject} ↗</a>`
+          : `<p style="font-size:13px;font-weight:600">${t.subject}</p>`}
+        ${t.description ? (() => {
+          // Clean WhatsApp chat logs - strip timestamp/name prefixes
+          let desc = t.description;
+          if (t.subject?.toLowerCase().includes('whatsapp')) {
+            desc = desc.replace(/\[\d{4}\/\d{2}\/\d{2},\s*\d{2}:\d{2}:\d{2}\]\s*[^:]+:\s*/g, '').replace(/\s+/g, ' ').trim();
+          }
+          return `<p style="font-size:12px;color:#555;line-height:1.6;margin-top:3px">${desc.slice(0,400)}${desc.length>400?'...':''}</p>`;
+        })() : ''}
+        <p style="font-size:11px;color:#bbb;margin-top:2px">${t.owner||''} · ${t.date||''}</p>
+      </div>
+      <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:#F3F4F6;color:#6B7280;flex-shrink:0;margin-left:10px">${t.status}</span>
+    </div>`).join('');
+}
+
+function formatWhatsApp(number) {
+  let n = (number || '').replace(/[\s\-\(\)]/g,'');
+  if (n.startsWith('0')) n = '27' + n.slice(1);
+  if (n.startsWith('+')) n = n.slice(1);
+  return n;
+}
+
+function renderContacts(contacts) {
+  const con = document.getElementById('sfContacts');
+  if (!contacts?.length) return;
+  const top3 = contacts.filter(c => c.mobile || c.phone).slice(0, 3);
+  con.innerHTML = `
+    <div class="section">
+      <div class="slabel"><span class="sdot" style="background:#6B7280"></span>Contacts (${top3.length}${contacts.length > top3.length ? ` of ${contacts.length}` : ''})</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${top3.map(c => {
+          const mobile = c.mobile || c.phone;
+          const waNumber = formatWhatsApp(mobile);
+          const name = (c.name||'').split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+          return `
+          <div class="contact-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="flex:1;min-width:0">
+              <p style="font-size:14px;font-weight:700;margin-bottom:2px">${name||'—'}</p>
+              ${c.title ? `<p style="font-size:12px;color:#888;margin-bottom:4px">${c.title}</p>` : ''}
+              ${mobile ? `<p style="font-size:13px;font-weight:500">${mobile}</p>` : ''}
+              ${c.email ? `<p style="font-size:12px;color:#888;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.email}</p>` : ''}
+            </div>
+            ${mobile && waNumber ? `
+            <a href="https://web.whatsapp.com/send?phone=${waNumber}" target="_blank"
+              style="flex-shrink:0;display:flex;align-items:center;gap:5px;background:#25D366;color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;text-decoration:none;white-space:nowrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              WhatsApp
+            </a>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+function renderIndustryInsights(sf) {
+  const sec = document.getElementById('industrySection');
+  const con = document.getElementById('industryContent');
+  if (!sf.industry) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  con.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:#888;font-size:12px"><div class="spin" style="width:16px;height:16px;border-width:2px"></div>Generating industry intelligence...</div>`;
+
+  fetch('/api/gemini', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      prompt: `You are a Yoco Account Manager in South Africa about to visit a ${sf.industry} merchant called "${sf.name}" in ${sf.city || 'South Africa'}, on the ${sf.billingPackage || 'Core'} plan with R${Math.round((sf.tpv30Day||0)/1000)}k monthly TPV.
+
+Give me 4 specific, practical industry intelligence bullets for this meeting. Focus on:
+1. What's happening RIGHT NOW in the ${sf.industry} industry in South Africa (seasonality, trends, challenges)
+2. What competitors or threats they face
+3. What Yoco products/features are most relevant given their industry and current plan
+4. One specific thing to watch out for in this meeting
+
+Respond in exactly this format (4 lines, each starting with an emoji):
+📈 [current industry trend or opportunity]
+⚔️ [competitive landscape or threat]
+🎯 [most relevant Yoco product/feature for them right now]
+⚠️ [specific watch out for this meeting]
+
+Be specific to ${sf.industry} in South Africa. Max 2 sentences per bullet.`,
+      maxTokens: 400
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.text) {
+      const lines = d.text.split('\n').filter(l => l.trim());
+      con.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">
+        ${lines.map(line => {
+          const isWarn = line.startsWith('⚠️');
+          const isTarget = line.startsWith('🎯');
+          const isTrend = line.startsWith('📈');
+          const bg = isWarn ? '#FFF7ED' : isTarget ? '#F0FDF4' : isTrend ? '#EFF6FF' : '#F5F3FF';
+          const border = isWarn ? '#FED7AA' : isTarget ? '#BBF7D0' : isTrend ? '#BFDBFE' : '#DDD6FE';
+          return `<div style="background:${bg};border:1px solid ${border};border-radius:9px;padding:10px 14px;font-size:13px;line-height:1.6">${line}</div>`;
+        }).join('')}
+      </div>`;
+    } else {
+      sec.style.display = 'none';
+    }
+  })
+  .catch(() => { sec.style.display = 'none'; });
+}
+
+function renderReleases(relevant) {
+  const sec = document.getElementById('relSection');
+  const con = document.getElementById('relContent');
+  if (!relevant?.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  const tierO = {'Tier 1':0,'Tier 2':1,'Tier 3':2};
+  const top = [...relevant].sort((a,b) => (tierO[a.tier]||2)-(tierO[b.tier]||2)).slice(0,3);
+  const rest = relevant.slice(3);
+  const sc = {'Live to All':'tg','Beta':'tb','Alpha':'ta'};
+  const topH = top.map(r => `<div class="rc">
+    <div class="rh"><span class="rname">${r.name}</span><div style="display:flex;gap:6px;align-items:center"><span class="tag ${sc[r.stage]||''}">${r.stage}</span><span style="font-size:11px;color:#bbb">${r.date}</span></div></div>
+    <div class="rsumm">${r.summary}</div>
+    <div class="rtp">💬 ${r.talking_point}</div>
+  </div>`).join('');
+  const restH = rest.length ? `<details style="margin-top:4px"><summary>+${rest.length} more relevant releases</summary><div style="margin-top:8px">${rest.map(r => `<div style="padding:7px 0;border-bottom:1px solid #F0EFE9;display:flex;gap:8px"><span class="tag ${sc[r.stage]||''}" style="flex-shrink:0;margin-top:1px">${r.stage}</span><div><p style="font-size:13px;font-weight:600">${r.name}</p><p style="font-size:12px;color:#888">${r.talking_point}</p></div></div>`).join('')}</div></details>` : '';
+  con.innerHTML = topH + restH;
+}
+
+function showAccountPicker(accounts, merchant, am) {
+  const picker = document.getElementById('accountPicker');
+  const list = document.getElementById('accountList');
+  picker.style.display = 'block';
+  list.innerHTML = accounts.map(a => `
+    <div style="border:1px solid #E5E4E0;border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color 0.15s"
+      onclick="selectAccount('${a.id}','${merchant}')"
+      onmouseover="this.style.borderColor='#0066FF'" onmouseout="this.style.borderColor='#E5E4E0'">
+      <div>
+        <p style="font-weight:700;font-size:14px">${a.name}</p>
+        <p style="font-size:12px;color:#888">${a.industry||'—'} · ${a.city||'—'}, ${a.country||'—'} · ${a.owner||'—'}</p>
+      </div>
+      <button style="height:32px;padding:0 14px;background:#0066FF;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer">Select</button>
+    </div>`).join('');
+}
+
+function selectAccount(accountId, merchant) {
+  window._chosenAccountId = accountId;
+  document.getElementById('accountPicker').style.display = 'none';
+  document.getElementById('merchant').value = merchant;
+  generate();
+}
+
+// --- MAIN GENERATE ---
+async function generate() {
+  const merchant = document.getElementById('merchant').value.trim();
+  if (!merchant) { alert('Enter a merchant name'); return; }
+  const am = '—'; // will be replaced by SF owner after load
+
+  _sf = null;
+  clearBanners();
+  document.getElementById('subAccountsSection').style.display = 'none';
+  document.getElementById('accountPicker').style.display = 'none';
+  document.getElementById('briefOutput').style.display = 'block';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('errBox').style.display = 'none';
+  // Disable Save to Notion until AI brief is ready
+  const saveBtnEl = document.getElementById('saveBtn');
+  saveBtnEl.disabled = true;
+  saveBtnEl.style.opacity = '0.4';
+  saveBtnEl.style.cursor = 'not-allowed';
+  document.getElementById('sfContacts').innerHTML = '';
+  ['sfSection','relSection','aiSection','capitalSection','productsSection','industrySection','prevTasksSection','subAccountsSection','intercomSection','opportunitiesSection','tasksSection','postMeetingSection'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  document.getElementById('briefTitle').textContent = merchant;
+  document.getElementById('briefMeta').textContent = `Generating... · AM: ${am}`;
+  dot('dot-sf','loading'); dot('dot-rel','loading'); dot('dot-ai','loading');
+  document.getElementById('sf-status').textContent = 'Fetching...';
+  _idx = 0;
+  document.getElementById('loadingMsg').textContent = MSGS[0];
+  _timer = setInterval(() => { _idx = Math.min(_idx+1, MSGS.length-1); document.getElementById('loadingMsg').textContent = MSGS[_idx]; }, 2500);
+
+  try {
+    // Salesforce
+    let sfData = null;
+    try {
+      const isGroup = document.getElementById('groupAccount').checked;
+      const r = await fetch('/api/salesforce', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({merchant, accountId: window._chosenAccountId||null, groupAccount: isGroup}) });
+      sfData = await r.json();
+
+      if (r.ok && sfData.found === 'multiple') {
+        clearInterval(_timer);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('briefOutput').style.display = 'none';
+        dot('dot-sf','loading');
+        document.getElementById('sf-status').textContent = `${sfData.accounts.length} found`;
+        showAccountPicker(sfData.accounts, merchant, am);
+        return;
+      }
+
+      if (r.ok && sfData.found) {
+        _sf = sfData;
+        const owner = sfData.keyAccountManager || sfData.owner || '—';
+        dot('dot-sf','live');
+        document.getElementById('sf-status').textContent = 'Live';
+        document.getElementById('briefTitle').textContent = sfData.name || merchant;
+        document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${owner}`;
+        renderSF(sfData);
+        renderTasks(sfData);
+        renderProducts(sfData);
+        renderOpportunities(sfData);
+        renderCapital(sfData);
+        renderIntercom(sfData);
+        renderPreviousTasks(sfData.previousTasks);
+        renderContacts(sfData.contacts);
+        if (sfData.isGroupAccount) renderSubAccounts(sfData.childAccounts || []);
+        renderIndustryInsights(sfData);
+        activateBtns();
+        document.getElementById('postMeetingSection').style.display = 'block';
+      } else {
+        dot('dot-sf','error');
+        document.getElementById('sf-status').textContent = sfData.found === false ? 'Not found' : 'Error';
+        showBanner('sf-banner', sfData.found === false
+          ? `⚠️ <strong>Merchant not found in Salesforce.</strong> Check the spelling or try a shorter search term. If the account exists, it may be named differently in SF.`
+          : `⚠️ <strong>Salesforce connection failed.</strong> This could be a temporary issue. Try generating the brief again. If it persists, contact your admin.`, 'warn');
+      }
+    } catch(e) {
+      dot('dot-sf','error');
+      document.getElementById('sf-status').textContent = 'Error';
+      showBanner('sf-banner', `🚨 <strong>Salesforce error:</strong> ${e.message}. Try refreshing the page and generating again.`, 'alert');
+    }
+
+    // Releases
+    const relevant = getRelevant(sfData?.industry || '');
+    renderReleases(relevant);
+    dot('dot-rel','live');
+    document.getElementById('rel-status').textContent = `${relevant.length} relevant`;
+
+    // AI synthesis
+    const prompt = `You are an experienced Yoco Account Manager preparing a detailed pre-meeting brief for "${merchant}". Be specific and intelligent — do NOT recommend products, plans or features the merchant already has.
+
+ACCOUNT DATA:
+- Plan: ${sfData?.billingPackage||'?'} | 30-day TPV: ${sfData?.tpv30Day?fmt(sfData.tpv30Day):'?'} | Industry: ${sfData?.industry||'?'} | City: ${sfData?.city||'?'}
+- Key Account: ${sfData?.isKeyAccount?'Yes':'No'} | On Yoco since: ${sfData?.createdDate?new Date(sfData.createdDate).getFullYear():'?'} | Fully onboarded: ${sfData?.fullyOnboarded?'Yes':'No'}
+- Open deals: ${sfData?.openDeals||0} | Won deals: ${sfData?.wonDeals||0} | Terminals: ${sfData?.terminalCount||'?'}
+- Capital status: ${sfData?.capitalStatus||'none taken'} | Capital offer: ${sfData?.capitalLimit?fmt(sfData.capitalLimit):'none'} | Capital eligible: ${sfData?.capitalEligible?'Yes':'Unknown'}
+- Gateway: ${sfData?.hasGateway||'unknown'} | Savings: ${sfData?.hasSavings||'unknown'} | Segment: ${sfData?.segment||'?'}
+- Integrations: ${sfData?.integrations||'none on file'}
+- Open cases (6mo): ${(sfData?.cases||[]).filter(c=>!['Closed','Resolved'].includes(c.status)).length} open, ${sfData?.cases?.length||0} total
+${sfData?.cases?.length ? `- Case topics: ${sfData.cases.slice(0,3).map(c=>c.subject).join(' | ')}` : ''}
+${sfData?.openTasks?.length ? `- Open tasks: ${sfData.openTasks.map(t=>`${t.subject} (due ${t.dueDate||'?'})`).join(', ')}` : ''}
+${sfData?.opportunities?.length ? `- Open opportunities: ${sfData.opportunities.map(o=>`${o.name} — ${o.stage}${o.amount?' ('+fmt(o.amount)+')':''}`).join(' | ')}` : ''}
+
+PREVIOUS ACTIVITY (last 3 interactions):
+${sfData?.previousTasks?.length ? sfData.previousTasks.slice(0,3).map(t=>`- [${t.date}] ${t.subject}: ${(t.description||'').slice(0,120)}`).join('\n') : '- No recent activity recorded'}
+
+RELEVANT PRODUCT RELEASES:
+${relevant.slice(0,3).map(r=>`- ${r.name}: ${r.talking_point}`).join('\n')}
+
+CRITICAL RULES:
+- Merchant is on ${sfData?.billingPackage||'unknown'} plan — do NOT suggest upgrading to a plan they already have
+- Only suggest features/products they don't currently have
+- Integrations on file: ${sfData?.integrations||'none'} — if they use a competitor POS (iKentoo, Lightspeed, Square, Toast, etc), pitch Yoco POS as a replacement
+- If they use third-party tools (Shopify, WooCommerce, etc), pitch Yoco Connect or Yoco Gateway as a native replacement
+- If they don't use Yoco Savings, pitch it
+- If they don't use Yoco Capital and have an offer, pitch it
+- Base ALL advice on the actual data above, not generic templates
+- If TPV is strong, acknowledge it specifically with the actual number
+- If there are open cases, address them as a risk
+- If there are overdue tasks, flag them explicitly
+
+Write a detailed pre-meeting brief using this format:
+
+ACCOUNT SUMMARY:
+[3-4 sentences — who they are, TPV performance, current plan, how long on Yoco]
+
+PREVIOUS ENGAGEMENT:
+[2-3 bullets — key themes from past interactions, any follow-ups owed]
+
+KEY OPPORTUNITIES:
+[3 bullets — specific to their situation, NOT things they already have]
+
+TALKING POINTS:
+[3 bullets — specific product releases or features relevant to their industry/plan]
+
+RISKS & WATCH OUTS:
+[2 bullets — churn signals, overdue items, open cases]
+
+RECOMMENDED APPROACH:
+[2 sentences — how to frame this specific meeting]`;
+
+    const ar = await fetch('/api/gemini', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt, maxTokens:1200}) });
+    if (ar.ok) {
+      const ad = await ar.json();
+      if (ad.text) {
+        document.getElementById('aiContent').textContent = ad.text;
+        document.getElementById('aiSection').style.display = 'block';
+        dot('dot-ai','live');
+        document.getElementById('ai-status').textContent = ad.model || 'GPT-4o mini';
+        // Enable Save to Notion now that AI is done
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'pointer';
+
+        // Slack notify AFTER AI is done
+        if (_sf) {
+          const amName = _sf.keyAccountManager || _sf.owner || '';
+          const briefUrl = `https://yoco-brief.vercel.app/?merchant=${encodeURIComponent(merchant)}&accountId=${encodeURIComponent(_sf.id || '')}`;
+          fetch('/api/slack-notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amName, merchant, briefUrl}) }).catch(()=>{});
+        }
+      } else {
+        dot('dot-ai','error');
+        document.getElementById('ai-status').textContent = 'Error';
+        showBanner('ai-banner', `⚠️ <strong>AI Synthesis returned an empty response.</strong> The brief data is still available above. Try clicking "Generate Brief" again to retry the AI summary.`, 'warn');
+      }
+    } else {
+      const errData = await ar.json().catch(()=>({}));
+      dot('dot-ai','error');
+      document.getElementById('ai-status').textContent = 'Error';
+      showBanner('ai-banner', `⚠️ <strong>AI Synthesis failed.</strong> ${errData.error || 'Unknown error'}. Your Salesforce data is still shown above. Try generating again — if this keeps happening, your OpenAI API key may need a top-up at platform.openai.com.`, 'warn');
+    }
+
+    clearInterval(_timer);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('briefMeta').textContent = `Generated ${new Date().toLocaleString('en-ZA')} · AM: ${_sf?.owner || '—'}`;
+    window._chosenAccountId = null;
+
+  } catch(err) {
+    clearInterval(_timer);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('errBox').style.display = 'block';
+    document.getElementById('errMsg').textContent = err.message;
+    showBanner('general-banner', `🚨 <strong>Something went wrong:</strong> ${err.message}. Please refresh the page and try again. If the issue persists, contact Vaughn.`, 'alert');
+  }
+}
+
+async function saveToNotion() {
+  const merchant = _sf?.name || document.getElementById('merchant').value.trim();
+  const am = _sf?.keyAccountManager || _sf?.owner || 'Unknown';
+  const ai = document.getElementById('aiContent').textContent;
+  const content = ai || `No AI brief generated.`;
+  if (!merchant) { alert('No merchant loaded'); return; }
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+
+  // Scrape previous activity
+  const prevTasks = (_sf?.previousTasks || []).map(t =>
+    `[${t.date}] ${t.subject}${t.description ? ': ' + t.description.slice(0, 200) : ''}`
+  );
+
+  // Scrape contacts
+  const contacts = (_sf?.contacts || []).slice(0, 3).map(c =>
+    `${c.name}${c.title ? ' (' + c.title + ')' : ''} — ${c.mobile || c.phone || ''} ${c.email ? '| ' + c.email : ''}`
+  );
+
+  // Scrape open tasks
+  const openTasks = (_sf?.openTasks || []).map(t =>
+    `${t.subject} — Due: ${t.dueDate || '?'} (${t.priority || 'Normal'})`
+  );
+
+  // Scrape opportunities
+  const opps = (_sf?.opportunities || []).map(o =>
+    `${o.name} — ${o.stage}${o.amount ? ' | R' + Number(o.amount).toLocaleString('en-ZA') : ''}${o.closeDate ? ' | Close: ' + o.closeDate : ''}`
+  );
+
+  // Scrape cases
+  const cases = (_sf?.cases || []).slice(0, 5).map(c =>
+    `#${c.caseNumber || '?'} ${c.subject} — ${c.status} (${c.created || ''})`
+  );
+
+  // Scrape releases
+  const releases = document.getElementById('relContent')?.innerText || '';
+
+  // Industry intelligence
+  const industry = document.getElementById('industryContent')?.innerText || '';
+
+  try {
+    const r = await fetch('/api/notion-save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        merchant, am, content,
+        sfData: {
+          id: _sf?.id,
+          tpv30Day: _sf?.tpv30Day,
+          billingPackage: _sf?.billingPackage,
+          industry: _sf?.industry,
+          city: _sf?.city,
+          fullAddress: _sf?.fullAddress,
+          isKeyAccount: _sf?.isKeyAccount,
+          fullyOnboarded: _sf?.fullyOnboarded,
+          phone: _sf?.phone,
+          openDeals: _sf?.openDeals,
+          wonDeals: _sf?.wonDeals,
+          capitalLimit: _sf?.capitalLimit,
+          capitalStatus: _sf?.capitalStatus,
+          capitalLastDate: _sf?.capitalLastDate,
+          capitalProvider: _sf?.capitalProvider,
+          segment: _sf?.segment,
+          integrations: _sf?.integrations,
+          websitePlugins: _sf?.websitePlugins,
+          bank: _sf?.bank,
+          cases: _sf?.cases?.length,
+          openCases: _sf?.cases?.filter(c=>!['Closed','Resolved'].includes(c.status)).length,
+          sfUrl: _sf?.sfUrl
+        },
+        openTasks,
+        contacts,
+        opportunities: opps,
+        cases,
+        previousActivity: prevTasks,
+        releases,
+        industryIntelligence: industry
+      })
+    });
+    const data = await r.json();
+    if (r.ok) {
+      btn.textContent = '✓ Saved';
+      window._notionPageId = data.id;
+      if (data.url) window.open(data.url, '_blank');
+    } else {
+      btn.textContent = 'Error: ' + (data.error || 'Failed');
+    }
+  } catch(e) { btn.textContent = 'Error'; }
+  setTimeout(() => { btn.textContent = 'Save to Notion'; btn.disabled = false; btn.style.opacity='1'; btn.style.cursor='pointer'; }, 3000);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && ['merchant','am'].includes(e.target.id)) generate();
+});
+
+async function createSFTask() {
+  const notes = document.getElementById('postMeetingNotes').value.trim();
+  if (!notes) { alert('Add some notes first'); return; }
+  if (!_sf?.id) { alert('No account loaded'); return; }
+
+  const btn = document.getElementById('createTaskBtn');
+  const status = document.getElementById('taskStatus');
+  btn.textContent = 'Summarising...'; btn.disabled = true;
+  status.textContent = '';
+
+  try {
+    // AI summarise the notes first
+    const merchant = document.getElementById('merchant').value.trim();
+    const summaryRes = await fetch('/api/gemini', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        prompt: `Summarise these post-meeting notes for a Yoco Account Manager meeting with "${merchant}" into a concise Salesforce task description. Include: key discussion points, any commitments made, next steps, and follow-up actions. Keep it professional and structured.\n\nNOTES:\n${notes}`,
+        maxTokens: 500
+      })
+    });
+    const summaryData = await summaryRes.json();
+    const summary = summaryData.text || notes;
+
+    btn.textContent = 'Logging to SF...';
+
+    // Create the task
+    const taskRes = await fetch('/api/salesforce-task', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        accountId: _sf.id,
+        subject: `Post-Meeting Notes — ${merchant} — ${new Date().toLocaleDateString('en-ZA')}`,
+        description: summary
+      })
+    });
+    const taskData = await taskRes.json();
+
+    if (taskRes.ok) {
+      btn.textContent = '✓ Logged to Salesforce';
+      btn.style.background = '#16A34A';
+      const sfBase = _sf.sfInstance || 'https://yoco.lightning.force.com';
+      status.innerHTML = `Task created — <a href="${sfBase}/${taskData.taskId}" target="_blank" style="color:#0066FF;font-weight:600">View in Salesforce ↗</a>`;
+
+      // Also update Notion to keep the repository current
+      btn.textContent = 'Updating Notion...';
+      try {
+        const notionRes = await fetch('/api/notion-update', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            pageId: window._notionPageId || null,
+            merchant,
+            am: _sf?.keyAccountManager || _sf?.owner || '',
+            notes: summary,
+            rawNotes: notes
+          })
+        });
+        const notionData = await notionRes.json();
+        if (notionRes.ok) {
+          status.innerHTML += ` · <span style="color:#16A34A;font-weight:600">Notion updated ✓</span>`;
+        } else {
+          status.innerHTML += ` · <span style="color:#D97706">Notion update skipped: ${notionData.error || 'no page'}</span>`;
+        }
+      } catch(e) {
+        status.innerHTML += ` · <span style="color:#D97706">Notion update failed</span>`;
+      }
+      btn.textContent = '✓ Logged to Salesforce';
+    } else {
+      btn.textContent = 'Error';
+      status.textContent = taskData.error || 'Failed to create task';
+      btn.style.background = '#DC2626';
+    }
+  } catch (err) {
+    btn.textContent = 'Error';
+    status.textContent = err.message;
+    btn.style.background = '#DC2626';
+  }
+  setTimeout(() => { btn.textContent = 'Log to Salesforce ↗'; btn.disabled = false; btn.style.background = '#0066FF'; }, 5000);
+}
+
+// Auto-generate if URL params present (from Slack notification link)
+window.addEventListener('load', () => {
+  const params = new URLSearchParams(window.location.search);
+  const merchant = params.get('merchant');
+  const accountId = params.get('accountId');
+  if (merchant) {
+    document.getElementById('merchant').value = merchant;
+    if (accountId) window._chosenAccountId = accountId;
+    generate();
+  }
+});
+</script>
+</body>
+</html>
