@@ -1029,10 +1029,10 @@ RECOMMENDED APPROACH:
 }
 
 async function saveToNotion() {
-  const merchant = document.getElementById('merchant').value.trim();
+  const merchant = _sf?.name || document.getElementById('merchant').value.trim();
   const am = _sf?.keyAccountManager || _sf?.owner || 'Unknown';
   const ai = document.getElementById('aiContent').textContent;
-  const content = ai || `Merchant: ${merchant}\nAM: ${am}\nGenerated: ${new Date().toLocaleString('en-ZA')}`;
+  const content = ai || `No AI brief generated.`;
   if (!merchant) { alert('No merchant loaded'); return; }
   const btn = document.getElementById('saveBtn');
   btn.textContent = 'Saving...'; btn.disabled = true;
@@ -1040,10 +1040,39 @@ async function saveToNotion() {
     const r = await fetch('/api/notion-save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ merchant, content })
+      body: JSON.stringify({
+        merchant,
+        am,
+        content,
+        sfData: {
+          id: _sf?.id,
+          tpv30Day: _sf?.tpv30Day,
+          billingPackage: _sf?.billingPackage,
+          industry: _sf?.industry,
+          city: _sf?.city,
+          isKeyAccount: _sf?.isKeyAccount,
+          fullyOnboarded: _sf?.fullyOnboarded,
+          phone: _sf?.phone,
+          openDeals: _sf?.openDeals,
+          wonDeals: _sf?.wonDeals,
+          capitalLimit: _sf?.capitalLimit,
+          capitalStatus: _sf?.capitalStatus,
+          segment: _sf?.segment,
+          integrations: _sf?.integrations,
+          cases: _sf?.cases?.length,
+          openCases: _sf?.cases?.filter(c=>!['Closed','Resolved'].includes(c.status)).length,
+          opportunities: _sf?.opportunities?.map(o=>`${o.name} — ${o.stage}`).join(', '),
+          sfUrl: _sf?.sfUrl
+        }
+      })
     });
     const data = await r.json();
-    btn.textContent = r.ok ? '✓ Saved' : 'Error: ' + (data.error || 'Failed');
+    if (r.ok) {
+      btn.textContent = '✓ Saved';
+      if (data.url) window.open(data.url, '_blank');
+    } else {
+      btn.textContent = 'Error: ' + (data.error || 'Failed');
+    }
   } catch(e) { btn.textContent = 'Error'; }
   setTimeout(() => { btn.textContent = 'Save to Notion'; btn.disabled = false; }, 3000);
 }
